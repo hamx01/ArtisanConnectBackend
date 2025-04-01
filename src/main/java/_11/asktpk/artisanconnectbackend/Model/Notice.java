@@ -1,63 +1,47 @@
 package _11.asktpk.artisanconnectbackend.Model;
 
 import jakarta.persistence.*;
-import java.sql.Blob;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import _11.asktpk.artisanconnectbackend.Utils.Enums.*;
 
 @Entity
+@Table(name = "notice")
 public class Notice {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long idNotice;
 
-    @Column
     private String title;
 
-    @Column
-    private String username;
+    @ManyToOne
+    @JoinColumn(name = "client_id")
+    private Client client;
 
-    @Column
     private String description;
+    private Double price;
 
-    public Notice() {
-        this.title = "";
-        this.username = "";
-        this.description = "";
-    }
+    @Enumerated(EnumType.STRING)
+    private Category category;
 
-    public Notice(String nTitle, String nUsername, String nDescription) {
-        this.title = nTitle;
-        this.username = nUsername;
-        this.description = nDescription;
-    }
+    @ElementCollection
+    private List<String> images;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
-    public Long getId() {
-        return id;
-    }
+    private LocalDate publishDate;
 
-    public String getUsername() {
-        return username;
-    }
+    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
+    private List<AttributesNotice> attributesNotices;
 
-    public void setUsername(String user) {
-        this.username = user;
-    }
+    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
+    private List<Orders> orders;
 
-    public String getTitle() {
-        return title;
-    }
+    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
+    private List<Payments> payments;
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    // Getters, setters, and constructors
 }

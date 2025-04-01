@@ -1,7 +1,6 @@
 package _11.asktpk.artisanconnectbackend.Controller;
 
 import _11.asktpk.artisanconnectbackend.Model.Notice;
-import _11.asktpk.artisanconnectbackend.Repository.NoticeRepository;
 import _11.asktpk.artisanconnectbackend.Service.PostgresDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
