@@ -1,54 +1,42 @@
-package _11.asktpk.artisanconnectbackend.Model;
+package _11.asktpk.artisanconnectbackend.dto;
 
-import jakarta.persistence.*;
+import _11.asktpk.artisanconnectbackend.Model.AttributesNotice;
+import _11.asktpk.artisanconnectbackend.Model.Client;
+import _11.asktpk.artisanconnectbackend.Model.Orders;
+import _11.asktpk.artisanconnectbackend.Model.Payments;
+import _11.asktpk.artisanconnectbackend.Utils.Enums;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import _11.asktpk.artisanconnectbackend.Utils.Enums.*;
-
-@Entity
-@Table(name = "notice")
-public class Notice {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idNotice;
-
+public class NoticeDTO {
     private String title;
-
-    @ManyToOne
-    @JoinColumn(name = "client_id")
     private Client client;
-
     private String description;
     private Double price;
-
-    @Enumerated(EnumType.STRING)
-    private Category category;
-
-    @ElementCollection
+    private Enums.Category category;
     private List<String> images;
-
-    @Enumerated(EnumType.STRING)
-    private Status status;
-
+    private Enums.Status status;
     private LocalDate publishDate;
-
-    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
     private List<AttributesNotice> attributesNotices;
-
-    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
     private List<Orders> orders;
-
-    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
     private List<Payments> payments;
 
-    public Long getIdNotice() {
-        return idNotice;
-    }
-
-    public void setIdNotice(Long idNotice) {
-        this.idNotice = idNotice;
+    public NoticeDTO(String title, Client client, String description, Double price,
+                     Enums.Category category, List<String> images, Enums.Status status,
+                     LocalDate publishDate, List<AttributesNotice> attributesNotices,
+                     List<Orders> orders, List<Payments> payments) {
+        this.title = title;
+        this.client = client;
+        this.description = description;
+        this.price = price;
+        this.category = category;
+        this.images = images;
+        this.status = status;
+        this.publishDate = publishDate;
+        this.attributesNotices = attributesNotices;
+        this.orders = orders;
+        this.payments = payments;
     }
 
     public String getTitle() {
@@ -83,11 +71,11 @@ public class Notice {
         this.price = price;
     }
 
-    public Category getCategory() {
+    public Enums.Category getCategory() {
         return category;
     }
 
-    public void setCategory(Category category) {
+    public void setCategory(Enums.Category category) {
         this.category = category;
     }
 
@@ -99,11 +87,11 @@ public class Notice {
         this.images = images;
     }
 
-    public Status getStatus() {
+    public Enums.Status getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(Enums.Status status) {
         this.status = status;
     }
 
@@ -138,6 +126,4 @@ public class Notice {
     public void setPayments(List<Payments> payments) {
         this.payments = payments;
     }
-
-    // Getters, setters, and constructors
 }
