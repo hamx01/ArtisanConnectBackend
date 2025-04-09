@@ -1,30 +1,26 @@
-package _11.asktpk.artisanconnectbackend.Model;
+package _11.asktpk.artisanconnectbackend.Entities;
 
 import _11.asktpk.artisanconnectbackend.Utils.Enums.Status;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "payments")
-public class Payments {
+@Table(name = "orders")
+public class Orders {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idPayment;
+    private Long idOrder;
 
     @ManyToOne
-    @JoinColumn(name = "id_order")
-    private Orders order;
+    @JoinColumn(name = "id_user")
+    private Client client;
 
     @ManyToOne
     @JoinColumn(name = "id_notice")
     private Notice notice;
 
-    private Double noticePublishPrice;
-
     @Enumerated(EnumType.STRING)
     private Status status;
-
-    private String sessionId;
 
     // Getters, setters, and constructors
 }

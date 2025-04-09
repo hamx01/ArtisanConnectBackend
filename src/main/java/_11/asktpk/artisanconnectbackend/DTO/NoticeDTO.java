@@ -1,9 +1,8 @@
-package _11.asktpk.artisanconnectbackend.dto;
+package _11.asktpk.artisanconnectbackend.DTO;
 
-import _11.asktpk.artisanconnectbackend.Model.AttributesNotice;
-import _11.asktpk.artisanconnectbackend.Model.Client;
-import _11.asktpk.artisanconnectbackend.Model.Orders;
-import _11.asktpk.artisanconnectbackend.Model.Payments;
+import _11.asktpk.artisanconnectbackend.Entities.AttributesNotice;
+import _11.asktpk.artisanconnectbackend.Entities.Orders;
+import _11.asktpk.artisanconnectbackend.Entities.Payments;
 import _11.asktpk.artisanconnectbackend.Utils.Enums;
 
 import java.time.LocalDate;
@@ -11,7 +10,7 @@ import java.util.List;
 
 public class NoticeDTO {
     private String title;
-    private Client client;
+    private Long clientId;
     private String description;
     private Double price;
     private Enums.Category category;
@@ -22,12 +21,12 @@ public class NoticeDTO {
     private List<Orders> orders;
     private List<Payments> payments;
 
-    public NoticeDTO(String title, Client client, String description, Double price,
+    public NoticeDTO(String title, Long clientId, String description, Double price,
                      Enums.Category category, List<String> images, Enums.Status status,
                      LocalDate publishDate, List<AttributesNotice> attributesNotices,
                      List<Orders> orders, List<Payments> payments) {
         this.title = title;
-        this.client = client;
+        this.clientId = clientId;
         this.description = description;
         this.price = price;
         this.category = category;
@@ -45,14 +44,6 @@ public class NoticeDTO {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public void setClient(Client client) {
-        this.client = client;
     }
 
     public String getDescription() {
@@ -125,5 +116,13 @@ public class NoticeDTO {
 
     public void setPayments(List<Payments> payments) {
         this.payments = payments;
+    }
+
+    public Long getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(Long clientId) {
+        this.clientId = clientId;
     }
 }

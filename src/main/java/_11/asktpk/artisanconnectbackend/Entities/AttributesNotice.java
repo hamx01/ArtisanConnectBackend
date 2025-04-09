@@ -1,4 +1,4 @@
-package _11.asktpk.artisanconnectbackend.Model;
+package _11.asktpk.artisanconnectbackend.Entities;
 
 import jakarta.persistence.*;
 
