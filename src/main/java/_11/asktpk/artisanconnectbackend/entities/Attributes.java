@@ -1,4 +1,4 @@
-package _11.asktpk.artisanconnectbackend.Entities;
+package _11.asktpk.artisanconnectbackend.entities;
 
 import jakarta.persistence.*;
 import java.util.List;

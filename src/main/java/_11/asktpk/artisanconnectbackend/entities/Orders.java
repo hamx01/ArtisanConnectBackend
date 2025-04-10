@@ -1,6 +1,6 @@
-package _11.asktpk.artisanconnectbackend.Entities;
+package _11.asktpk.artisanconnectbackend.entities;
 
-import _11.asktpk.artisanconnectbackend.Utils.Enums.Status;
+import _11.asktpk.artisanconnectbackend.utils.Enums.Status;
 
 import jakarta.persistence.*;
 

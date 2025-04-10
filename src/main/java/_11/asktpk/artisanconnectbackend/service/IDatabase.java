@@ -1,6 +1,6 @@
-package _11.asktpk.artisanconnectbackend.Service;
+package _11.asktpk.artisanconnectbackend.service;
 
-import _11.asktpk.artisanconnectbackend.Entities.Notice;
+import _11.asktpk.artisanconnectbackend.entities.Notice;
 
 import java.util.List;
 

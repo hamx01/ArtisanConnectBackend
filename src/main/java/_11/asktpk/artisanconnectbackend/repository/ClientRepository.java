@@ -1,6 +1,6 @@
-package _11.asktpk.artisanconnectbackend.Repository;
+package _11.asktpk.artisanconnectbackend.repository;
 
-import _11.asktpk.artisanconnectbackend.Entities.Client;
+import _11.asktpk.artisanconnectbackend.entities.Client;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClientRepository extends JpaRepository<Client, Long> {

@@ -1,4 +1,4 @@
-package _11.asktpk.artisanconnectbackend.Utils;
+package _11.asktpk.artisanconnectbackend.utils;
 
 public class Enums {
     public enum Role {

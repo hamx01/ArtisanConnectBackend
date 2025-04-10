@@ -1,6 +1,6 @@
-package _11.asktpk.artisanconnectbackend.Repository;
+package _11.asktpk.artisanconnectbackend.repository;
 
-import _11.asktpk.artisanconnectbackend.Entities.Notice;
+import _11.asktpk.artisanconnectbackend.entities.Notice;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
