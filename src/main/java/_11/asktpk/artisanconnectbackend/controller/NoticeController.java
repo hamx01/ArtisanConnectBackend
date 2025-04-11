@@ -1,6 +1,5 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
-import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
@@ -12,25 +11,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.springframework.web.servlet.function.ServerResponse.status;
-
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/notices")
 @RestController
-public class ArtisanConnectController {
+public class NoticeController {
     @Autowired
     private NoticeService noticeService;
 
     @Autowired
     private ClientService clientService;
 
-    @GetMapping("/notices/all")
+    @GetMapping("/all")
     public List<NoticeDTO> getAllNotices() {
         return noticeService.getAllNotices();
     }
 
-    @PostMapping("/notices/add")
+    @PostMapping("/add")
     public ResponseEntity<String> addNotice(@RequestBody NoticeDTO dto) {
-        if (!clientService.getByID(dto.getClientId())) {
+        if (!clientService.clientExists(dto.getClientId())) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("Nie znaleziono klienta o ID: " + dto.getClientId());
@@ -43,7 +40,7 @@ public class ArtisanConnectController {
 
 
     // TODO: zamiast dodawać tutaj pętlą, musi to robić NoticeService, trzeba zaimplementować odpowienią metodę
-    @PostMapping("/notices/bulk_add")
+    @PostMapping("/bulk_add")
     public ResponseEntity<String> addNotices(@RequestBody List<NoticeDTO> notices_list) {
         ResponseEntity<String> response = new ResponseEntity<>(HttpStatus.CREATED);
         List<String> errors = new ArrayList<>();
@@ -54,7 +51,7 @@ public class ArtisanConnectController {
         }
 
         for (NoticeDTO dto : notices_list) {
-            if (!clientService.getByID(dto.getClientId())) {
+            if (!clientService.clientExists(dto.getClientId())) {
                 isError = true;
                 errors.add(dto.getClientId().toString());
             } else {
@@ -71,8 +68,21 @@ public class ArtisanConnectController {
         return response;
     }
 
-    @GetMapping("/clients/all")
-    public List<ClientDTO> getAllClients() {
-        return clientService.getAllClients();
+    @PutMapping("/edit/{id}")
+    public ResponseEntity editNotice(@PathVariable("id") long id, @RequestBody NoticeDTO dto) {
+        if (noticeService.noticeExists(id)) {
+            return new ResponseEntity<>(noticeService.updateNotice(dto), HttpStatus.OK);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
+        }
     }
+
+//    @GetMapping("/check/{id}")
+//    public ResponseEntity<String> checkNotice(@PathVariable("id") long id) {
+//        if (noticeService.noticeExists(id)) {
+//            return ResponseEntity.ok("Ogłoszenie o ID " + id + " istnieje.");
+//        } else {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
+//        }
+//    }
 }

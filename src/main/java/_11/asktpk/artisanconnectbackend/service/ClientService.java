@@ -46,8 +46,20 @@ public class ClientService {
         return clients.stream().map(this::toDto).toList();
     }
 
-    public boolean getByID(Long id) {
+    public Client getClientById(Long id) {
+        return clientRepository.findById(id).orElse(null);
+    }
+
+    public boolean clientExists(Long id) {
         return clientRepository.existsById(id);
     }
 
+    public ClientDTO updateClient(ClientDTO clientDTO) {
+        Client client = fromDto(clientDTO);
+        return toDto(clientRepository.save(client));
+    }
+
+    public void deleteClient(Long id) {
+        clientRepository.deleteById(id);
+    }
 }

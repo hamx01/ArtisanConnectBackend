@@ -70,4 +70,13 @@ public class NoticeService {
     public void addNotice(Notice notice) {
         noticeRepository.save(notice);
     }
+
+    public boolean noticeExists(Long id) {
+        return noticeRepository.existsById(id);
+    }
+
+    public NoticeDTO updateNotice(NoticeDTO dto) {
+        Notice notice = createFromDTO(dto);
+        return toDTO(noticeRepository.save(notice));
+    }
 }
