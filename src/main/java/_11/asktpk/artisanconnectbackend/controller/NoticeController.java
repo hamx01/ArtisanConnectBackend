@@ -3,6 +3,7 @@ package _11.asktpk.artisanconnectbackend.controller;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ public class NoticeController {
                     .body("Nie znaleziono klienta o ID: " + dto.getClientId());
         }
 
-        noticeService.addNotice(noticeService.createFromDTO(dto));
+        noticeService.addNotice(noticeService.fromDTO(dto));
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Dodano ogłoszenie.");
     }
@@ -56,7 +57,7 @@ public class NoticeController {
                 errors.add(dto.getClientId().toString());
             } else {
                 if(!isError){
-                    noticeService.addNotice(noticeService.createFromDTO(dto));
+                    noticeService.addNotice(noticeService.fromDTO(dto));
                 }
             }
         }
@@ -68,14 +69,18 @@ public class NoticeController {
         return response;
     }
 
-    @PutMapping("/edit/{id}")
-    public ResponseEntity editNotice(@PathVariable("id") long id, @RequestBody NoticeDTO dto) {
-        if (noticeService.noticeExists(id)) {
-            return new ResponseEntity<>(noticeService.updateNotice(dto), HttpStatus.OK);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
+@PutMapping("/edit/{id}")
+public ResponseEntity<Object> editNotice(@PathVariable("id") long id, @RequestBody NoticeDTO dto) {
+    if (noticeService.noticeExists(id)) {
+        try {
+            return new ResponseEntity<>(noticeService.updateNotice(id, dto), HttpStatus.OK);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    } else {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
     }
+}
 
 //    @GetMapping("/check/{id}")
 //    public ResponseEntity<String> checkNotice(@PathVariable("id") long id) {

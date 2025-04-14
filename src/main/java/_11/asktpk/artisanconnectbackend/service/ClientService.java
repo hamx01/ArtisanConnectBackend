@@ -3,6 +3,7 @@ package _11.asktpk.artisanconnectbackend.service;
 import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
 import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -54,9 +55,17 @@ public class ClientService {
         return clientRepository.existsById(id);
     }
 
-    public ClientDTO updateClient(ClientDTO clientDTO) {
-        Client client = fromDto(clientDTO);
-        return toDto(clientRepository.save(client));
+    public ClientDTO updateClient(long id, ClientDTO clientDTO) {
+        Client existingClient = clientRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
+
+        existingClient.setEmail(clientDTO.getEmail());
+        existingClient.setFirstName(clientDTO.getFirstName());
+        existingClient.setLastName(clientDTO.getLastName());
+        existingClient.setImage(clientDTO.getImage());
+        existingClient.setRole(clientDTO.getRole());
+
+        return toDto(clientRepository.save(existingClient));
     }
 
     public void deleteClient(Long id) {

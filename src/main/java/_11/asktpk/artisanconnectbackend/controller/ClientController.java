@@ -15,7 +15,7 @@ import java.util.List;
 public class ClientController {
     private final ClientService clientService;
 
-    public ClientController(ClientService clientService, ClientRepository clientRepository) {
+    public ClientController(ClientService clientService) {
         this.clientService = clientService;
     }
 
@@ -28,7 +28,7 @@ public class ClientController {
     @PutMapping("/edit/{id}")
     public ResponseEntity updateClient(@PathVariable("id") long id, @RequestBody ClientDTO clientDTO) {
         if(clientService.clientExists(id)) {
-            return new ResponseEntity<>(clientService.updateClient(clientDTO),HttpStatus.OK);
+            return new ResponseEntity<>(clientService.updateClient(id, clientDTO),HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

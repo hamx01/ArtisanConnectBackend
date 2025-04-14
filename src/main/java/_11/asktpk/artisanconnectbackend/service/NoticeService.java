@@ -6,8 +6,6 @@ import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
 import _11.asktpk.artisanconnectbackend.repository.NoticeRepository;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.Builder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,7 +22,7 @@ public class NoticeService {
         this.clientRepository = clientRepository;
     }
 
-    public Notice createFromDTO(NoticeDTO dto) {
+    public Notice fromDTO(NoticeDTO dto) {
         Notice notice = new Notice();
         notice.setTitle(dto.getTitle());
         notice.setDescription(dto.getDescription());
@@ -75,8 +73,24 @@ public class NoticeService {
         return noticeRepository.existsById(id);
     }
 
-    public NoticeDTO updateNotice(NoticeDTO dto) {
-        Notice notice = createFromDTO(dto);
-        return toDTO(noticeRepository.save(notice));
+public NoticeDTO updateNotice(Long id, NoticeDTO dto) {
+    Notice existingNotice = noticeRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
+
+    existingNotice.setTitle(dto.getTitle());
+    existingNotice.setDescription(dto.getDescription());
+    existingNotice.setPrice(dto.getPrice());
+    existingNotice.setCategory(dto.getCategory());
+    existingNotice.setImages(dto.getImages());
+    existingNotice.setStatus(dto.getStatus());
+    existingNotice.setAttributesNotices(dto.getAttributesNotices());
+
+    if (dto.getClientId() != null && !dto.getClientId().equals(existingNotice.getClient().getId())) {
+        Client client = clientRepository.findById(dto.getClientId())
+                .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono klienta o ID: " + dto.getClientId()));
+        existingNotice.setClient(client);
     }
+
+    return toDTO(noticeRepository.save(existingNotice));
+}
 }
