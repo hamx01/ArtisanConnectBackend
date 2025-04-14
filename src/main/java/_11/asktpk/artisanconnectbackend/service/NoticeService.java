@@ -93,4 +93,14 @@ public NoticeDTO updateNotice(Long id, NoticeDTO dto) {
 
     return toDTO(noticeRepository.save(existingNotice));
 }
+
+public void deleteNotice(Long id) {
+    if (noticeExists(id)) {
+        noticeRepository.deleteById(id);
+    } else {
+        throw new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id);
+    }
+}
+
+
 }

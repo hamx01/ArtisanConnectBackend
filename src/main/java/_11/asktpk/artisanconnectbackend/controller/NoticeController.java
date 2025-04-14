@@ -82,6 +82,17 @@ public ResponseEntity<Object> editNotice(@PathVariable("id") long id, @RequestBo
     }
 }
 
+@DeleteMapping("/delete/{id}")
+public ResponseEntity deleteNotice(@PathVariable("id") long id) {
+    if(noticeService.noticeExists(id)) {
+        noticeService.deleteNotice(id);
+        return new ResponseEntity<>(HttpStatus.OK);
+    } else {
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+}
+
+
 //    @GetMapping("/check/{id}")
 //    public ResponseEntity<String> checkNotice(@PathVariable("id") long id) {
 //        if (noticeService.noticeExists(id)) {
