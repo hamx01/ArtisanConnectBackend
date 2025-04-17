@@ -65,6 +65,12 @@ public class NoticeService {
         return result;
     }
 
+    public NoticeDTO getNoticeById(Long id) {
+        Notice notice = noticeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
+        return toDTO(notice);
+    }
+
     public void addNotice(Notice notice) {
         noticeRepository.save(notice);
     }
@@ -73,34 +79,32 @@ public class NoticeService {
         return noticeRepository.existsById(id);
     }
 
-public NoticeDTO updateNotice(Long id, NoticeDTO dto) {
-    Notice existingNotice = noticeRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
+    public NoticeDTO updateNotice(Long id, NoticeDTO dto) {
+        Notice existingNotice = noticeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
 
-    existingNotice.setTitle(dto.getTitle());
-    existingNotice.setDescription(dto.getDescription());
-    existingNotice.setPrice(dto.getPrice());
-    existingNotice.setCategory(dto.getCategory());
-    existingNotice.setImages(dto.getImages());
-    existingNotice.setStatus(dto.getStatus());
-    existingNotice.setAttributesNotices(dto.getAttributesNotices());
+        existingNotice.setTitle(dto.getTitle());
+        existingNotice.setDescription(dto.getDescription());
+        existingNotice.setPrice(dto.getPrice());
+        existingNotice.setCategory(dto.getCategory());
+        existingNotice.setImages(dto.getImages());
+        existingNotice.setStatus(dto.getStatus());
+        existingNotice.setAttributesNotices(dto.getAttributesNotices());
 
-    if (dto.getClientId() != null && !dto.getClientId().equals(existingNotice.getClient().getId())) {
-        Client client = clientRepository.findById(dto.getClientId())
-                .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono klienta o ID: " + dto.getClientId()));
-        existingNotice.setClient(client);
+        if (dto.getClientId() != null && !dto.getClientId().equals(existingNotice.getClient().getId())) {
+            Client client = clientRepository.findById(dto.getClientId())
+                    .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono klienta o ID: " + dto.getClientId()));
+            existingNotice.setClient(client);
+        }
+
+        return toDTO(noticeRepository.save(existingNotice));
     }
 
-    return toDTO(noticeRepository.save(existingNotice));
-}
-
-public void deleteNotice(Long id) {
-    if (noticeExists(id)) {
-        noticeRepository.deleteById(id);
-    } else {
-        throw new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id);
+    public void deleteNotice(Long id) {
+        if (noticeExists(id)) {
+            noticeRepository.deleteById(id);
+        } else {
+            throw new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id);
+        }
     }
-}
-
-
 }

@@ -21,9 +21,18 @@ public class NoticeController {
     @Autowired
     private ClientService clientService;
 
-    @GetMapping("/all")
+    @GetMapping("/get/all")
     public List<NoticeDTO> getAllNotices() {
         return noticeService.getAllNotices();
+    }
+
+    @GetMapping("/get/{id}")
+    public ResponseEntity getNoticeById(@PathVariable long id) {
+        if (noticeService.noticeExists(id)) {
+            return ResponseEntity.ok(noticeService.getNoticeById(id));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/add")
