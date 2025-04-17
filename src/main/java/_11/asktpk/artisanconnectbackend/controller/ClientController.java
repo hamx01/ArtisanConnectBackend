@@ -19,9 +19,18 @@ public class ClientController {
         this.clientService = clientService;
     }
 
-    @GetMapping("/all")
+    @GetMapping("/get/all")
     public List<ClientDTO> getAllClients() {
         return clientService.getAllClients();
+    }
+
+    @GetMapping("/get/{id}")
+    public ResponseEntity getClientById(@PathVariable long id) {
+        if(clientService.getClientById(id) != null) {
+            return new ResponseEntity(clientService.getClientById(id), HttpStatus.OK);
+        } else {
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        }
     }
 
     // TODO: do zrobienia walidacja danych
