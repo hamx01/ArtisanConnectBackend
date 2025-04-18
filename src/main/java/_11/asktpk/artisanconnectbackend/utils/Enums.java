@@ -6,10 +6,14 @@ public class Enums {
     }
 
     public enum Category {
-        Electronics, Artwork, Kitchen, Buildings, Home, Fashion // Replace with actual categories
+        Handmade, Woodworking, Metalworking, Ceramics,
+        Textiles, Jewelry, Leatherwork, Painting, Sculpture,
+        Glasswork, Furniture, Restoration, Tailoring, Weaving,
+        Calligraphy, Pottery, Blacksmithing, Basketry, Embroidery,
+        Knitting, Carpentry, Other
     }
 
     public enum Status {
-        ACTIVE, INACTIVE // Replace with actual statuses
+        ACTIVE, INACTIVE
     }
 }

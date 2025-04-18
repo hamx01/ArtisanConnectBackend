@@ -2,7 +2,7 @@ package _11.asktpk.artisanconnectbackend.entities;
 
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import _11.asktpk.artisanconnectbackend.utils.Enums.*;
@@ -36,7 +36,7 @@ public class Notice {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    private LocalDate publishDate;
+    private LocalDateTime publishDate;
 
     @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
     private List<AttributesNotice> attributesNotices;

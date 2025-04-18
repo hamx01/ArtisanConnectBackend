@@ -5,7 +5,7 @@ import _11.asktpk.artisanconnectbackend.utils.Enums;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter @Setter
@@ -26,7 +26,7 @@ public class NoticeDTO {
 
     private Enums.Status status;
 
-    private LocalDate publishDate;
+    private LocalDateTime publishDate;
 
     private List<AttributesNotice> attributesNotices;
 
@@ -36,7 +36,7 @@ public class NoticeDTO {
 
     public NoticeDTO(Long noticeId, String title, Long clientId, String description, Double price,
                      Enums.Category category, List<String> images, Enums.Status status,
-                     LocalDate publishDate, List<AttributesNotice> attributesNotices) {
+                     LocalDateTime publishDate, List<AttributesNotice> attributesNotices) {
         this.noticeId = noticeId;
         this.title = title;
         this.clientId = clientId;

@@ -7,7 +7,11 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +48,8 @@ public class NoticeController {
                     .body("Nie znaleziono klienta o ID: " + dto.getClientId());
         }
 
+        dto.setPublishDate(java.time.LocalDateTime.now());
+
         noticeService.addNotice(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Dodano ogłoszenie.");
@@ -66,42 +72,81 @@ public class NoticeController {
                 isError = true;
                 errors.add(dto.getClientId().toString());
             } else {
-                if(!isError){
+                if (!isError) {
                     noticeService.addNotice(dto);
                 }
             }
         }
 
-        if(isError) {
+        if (isError) {
             return response.status(HttpStatus.BAD_REQUEST).body("Nie znaleziono klientów: " + errors);
         }
 
         return response;
     }
 
-@PutMapping("/edit/{id}")
-public ResponseEntity<Object> editNotice(@PathVariable("id") long id, @RequestBody NoticeDTO dto) {
-    if (noticeService.noticeExists(id)) {
-        try {
-            return new ResponseEntity<>(noticeService.updateNotice(id, dto), HttpStatus.OK);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<Object> editNotice(@PathVariable("id") long id, @RequestBody NoticeDTO dto) {
+        if (noticeService.noticeExists(id)) {
+            try {
+                return new ResponseEntity<>(noticeService.updateNotice(id, dto), HttpStatus.OK);
+            } catch (EntityNotFoundException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
         }
-    } else {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
     }
-}
 
-@DeleteMapping("/delete/{id}")
-public ResponseEntity deleteNotice(@PathVariable("id") long id) {
-    if(noticeService.noticeExists(id)) {
-        noticeService.deleteNotice(id);
-        return new ResponseEntity<>(HttpStatus.OK);
-    } else {
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity deleteNotice(@PathVariable("id") long id) {
+        if (noticeService.noticeExists(id)) {
+            noticeService.deleteNotice(id);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
-}
 
+    @PostMapping("/upload/{id}")
+    public ResponseEntity<String> uploadImage(@PathVariable("id") Long id, @RequestParam("file") MultipartFile file) {
+        if (!noticeService.noticeExists(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
+        }
+
+        try {
+            String filePath = noticeService.saveImage(id, file);
+            return ResponseEntity.ok("Zdjęcie zapisane pod ścieżką: " + filePath);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Błąd podczas zapisywania zdjęcia: " + e.getMessage());
+        }
+    }
+
+
+    @GetMapping("/images/{id}")
+    public ResponseEntity<List<String>> getAllImages(@PathVariable("id") Long id) {
+        try {
+            Path directoryPath = Paths.get("src/main/resources/static/images/notices/" + id);
+            if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            List<String> imagePaths = new ArrayList<>();
+            Files.list(directoryPath).forEach(file -> {
+                if (Files.isRegularFile(file) && Files.isReadable(file)) {
+                    imagePaths.add(file.toString());
+                }
+            });
+
+            if (imagePaths.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            return ResponseEntity.ok(imagePaths);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
 //    @GetMapping("/check/{id}")
 //    public ResponseEntity<String> checkNotice(@PathVariable("id") long id) {

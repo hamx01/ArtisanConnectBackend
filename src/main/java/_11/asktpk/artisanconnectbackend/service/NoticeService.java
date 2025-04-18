@@ -7,7 +7,13 @@ import _11.asktpk.artisanconnectbackend.repository.NoticeRepository;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,5 +111,52 @@ public class NoticeService {
         } else {
             throw new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id);
         }
+    }
+
+    public String saveImage(Long noticeId, MultipartFile file) throws IOException {
+        String uploadDir = "src/main/resources/static/images/notices/" + noticeId;
+        Path uploadPath = Paths.get(uploadDir);
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // szukanie nazwy pliku
+        String fileName = file.getOriginalFilename();
+        if (fileName != null) {
+            String extension = fileName.substring(fileName.lastIndexOf('.'));
+            String baseName = fileName.substring(0, fileName.lastIndexOf('.'));
+
+            List<Path> filesInDirectory = Files.list(uploadPath)
+                    .filter(Files::isRegularFile)
+                    .toList();
+
+            int maxNumber = filesInDirectory.stream()
+                    .map(path -> path.getFileName().toString())
+                    .filter(name -> name.startsWith(baseName) && name.endsWith(extension))
+                    .map(name -> name.substring(baseName.length(), name.length() - extension.length()))
+                    .filter(number -> number.matches("\\d+"))
+                    .mapToInt(Integer::parseInt)
+                    .max()
+                    .orElse(0);
+
+            fileName = baseName + (maxNumber + 1) + extension;
+        }
+        //koniec szukania nazwy pliku
+
+        if(fileName == null) {
+            throw new IOException("Nie można znaleźć nazwy pliku");
+        }
+        Path filePath = uploadPath.resolve(fileName);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + noticeId));
+        List<String> images = notice.getImages();
+        images.add(filePath.toString());
+        notice.setImages(images);
+        noticeRepository.save(notice);
+
+        return filePath.toString();
     }
 }
