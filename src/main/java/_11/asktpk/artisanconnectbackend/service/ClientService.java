@@ -16,7 +16,7 @@ public class ClientService {
         this.clientRepository = clientRepository;
     }
 
-    public ClientDTO toDto(Client client) {
+    private ClientDTO toDto(Client client) {
         ClientDTO dto = new ClientDTO();
 
         dto.setId(client.getId());
@@ -29,7 +29,7 @@ public class ClientService {
         return dto;
     }
 
-    public Client fromDto(ClientDTO dto) {
+    private Client fromDto(ClientDTO dto) {
         Client client = new Client();
 
         client.setId(dto.getId());
@@ -53,6 +53,10 @@ public class ClientService {
 
     public boolean clientExists(Long id) {
         return clientRepository.existsById(id);
+    }
+
+    public ClientDTO addClient(ClientDTO clientDTO) {
+        return toDto(clientRepository.save(fromDto(clientDTO)));
     }
 
     public ClientDTO updateClient(long id, ClientDTO clientDTO) {

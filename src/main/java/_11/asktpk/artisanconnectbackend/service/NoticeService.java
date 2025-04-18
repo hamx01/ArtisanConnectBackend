@@ -22,7 +22,7 @@ public class NoticeService {
         this.clientRepository = clientRepository;
     }
 
-    public Notice fromDTO(NoticeDTO dto) {
+    private Notice fromDTO(NoticeDTO dto) {
         Notice notice = new Notice();
         notice.setTitle(dto.getTitle());
         notice.setDescription(dto.getDescription());
@@ -40,8 +40,7 @@ public class NoticeService {
         return notice;
     }
 
-    // Metoda do konwersji Notice na DTO
-    public NoticeDTO toDTO(Notice notice) {
+    private NoticeDTO toDTO(Notice notice) {
         NoticeDTO dto = new NoticeDTO();
         dto.setNoticeId(notice.getIdNotice());
         dto.setTitle(notice.getTitle());
@@ -71,8 +70,8 @@ public class NoticeService {
         return toDTO(notice);
     }
 
-    public void addNotice(Notice notice) {
-        noticeRepository.save(notice);
+    public void addNotice(NoticeDTO dto) {
+        noticeRepository.save(fromDTO(dto));
     }
 
     public boolean noticeExists(Long id) {

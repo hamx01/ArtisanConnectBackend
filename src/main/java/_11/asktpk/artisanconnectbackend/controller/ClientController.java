@@ -32,6 +32,15 @@ public class ClientController {
         }
     }
 
+    @PostMapping("/add")
+    public ResponseEntity addClient(@RequestBody ClientDTO clientDTO) {
+        if(clientService.clientExists(clientDTO.getId())) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        } else {
+            return new ResponseEntity<>(clientService.addClient(clientDTO), HttpStatus.CREATED);
+        }
+    }
+
     // TODO: do zrobienia walidacja danych
     @PutMapping("/edit/{id}")
     public ResponseEntity updateClient(@PathVariable("id") long id, @RequestBody ClientDTO clientDTO) {

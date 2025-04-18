@@ -4,7 +4,6 @@ import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +44,7 @@ public class NoticeController {
                     .body("Nie znaleziono klienta o ID: " + dto.getClientId());
         }
 
-        noticeService.addNotice(noticeService.fromDTO(dto));
+        noticeService.addNotice(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Dodano ogłoszenie.");
     }
@@ -68,7 +67,7 @@ public class NoticeController {
                 errors.add(dto.getClientId().toString());
             } else {
                 if(!isError){
-                    noticeService.addNotice(noticeService.fromDTO(dto));
+                    noticeService.addNotice(dto);
                 }
             }
         }
