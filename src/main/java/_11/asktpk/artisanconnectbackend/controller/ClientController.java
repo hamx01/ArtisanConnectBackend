@@ -1,9 +1,8 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
 
-import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
-import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
+import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
