@@ -1,9 +1,25 @@
 services:
-  postgres:
+  app:
+    container_name: artisan
+    build: .
+    networks:
+      - artisan_network
+    depends_on:
+      - db
+
+  db:
+    container_name: db
     image: 'postgres:latest'
     environment:
-      - 'POSTGRES_DB=default'
+      - 'POSTGRES_DB=postgres'
       - 'POSTGRES_PASSWORD=postgres'
       - 'POSTGRES_USER=postgres'
     ports:
       - '5432:5432'
+    networks:
+      - artisan_network
+
+networks:
+  artisan_network:
+    name: artisan_net
+    external: false
