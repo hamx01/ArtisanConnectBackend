@@ -1,14 +1,17 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
 import _11.asktpk.artisanconnectbackend.service.ClientService;
+import _11.asktpk.artisanconnectbackend.service.ImageService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,10 +23,12 @@ import java.util.List;
 public class NoticeController {
     private final NoticeService noticeService;
     private final ClientService clientService;
+    private final ImageService imageService;
 
-    public NoticeController(NoticeService noticeService, ClientService clientService) {
+    public NoticeController(NoticeService noticeService, ClientService clientService, ImageService imageService) {
         this.noticeService = noticeService;
         this.clientService = clientService;
+        this.imageService = imageService;
     }
 
     @GetMapping("/get/all")
@@ -110,12 +115,16 @@ public class NoticeController {
 
     @PostMapping("/upload/{id}")
     public ResponseEntity<String> uploadImage(@PathVariable("id") Long id, @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nie przesłano pliku.");
+        }
+
         if (!noticeService.noticeExists(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
         }
 
         try {
-            String filePath = noticeService.saveImage(id, file);
+            String filePath = noticeService.saveImage("./app/images/notices/", id, file);
             return ResponseEntity.ok("Zdjęcie zapisane pod ścieżką: " + filePath);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Błąd podczas zapisywania zdjęcia: " + e.getMessage());
@@ -123,37 +132,56 @@ public class NoticeController {
     }
 
 
-    @GetMapping("/images/{id}")
-    public ResponseEntity<List<String>> getAllImages(@PathVariable("id") Long id) {
+    @GetMapping("/images/{noticeId}/{imageIndex}")
+    public ResponseEntity<byte[]> getImage(@PathVariable Long noticeId, @PathVariable Integer imageIndex) {
         try {
-            Path directoryPath = Paths.get("src/main/resources/static/images/notices/" + id);
-            if (!Files.exists(directoryPath) || !Files.isDirectory(directoryPath)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            if (!noticeService.noticeExists(noticeId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
 
-            List<String> imagePaths = new ArrayList<>();
-            Files.list(directoryPath).forEach(file -> {
-                if (Files.isRegularFile(file) && Files.isReadable(file)) {
-                    imagePaths.add(file.toString());
-                }
-            });
+            NoticeDTO notice = noticeService.getNoticeById(noticeId);
+            List<String> imagePaths = notice.getImages();
 
-            if (imagePaths.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            if (imagePaths == null || imagePaths.isEmpty() || imageIndex >= imagePaths.size() || imageIndex < 0) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
 
-            return ResponseEntity.ok(imagePaths);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            String imagePath = imagePaths.get(imageIndex);
+            byte[] imageBytes = imageService.getImageBytes(imagePath);
+            MediaType mediaType = imageService.getMediaTypeForImage(imagePath);
+
+            return ResponseEntity
+                    .ok()
+                    .contentType(mediaType)
+                    .body(imageBytes);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-//    @GetMapping("/check/{id}")
-//    public ResponseEntity<String> checkNotice(@PathVariable("id") long id) {
-//        if (noticeService.noticeExists(id)) {
-//            return ResponseEntity.ok("Ogłoszenie o ID " + id + " istnieje.");
-//        } else {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nie znaleziono ogłoszenia o ID: " + id);
-//        }
-//    }
+    @GetMapping("/images/{id}")
+    public ResponseEntity<List<String>> getNoticeImageUrls(@PathVariable("id") Long id) {
+        try {
+            if (!noticeService.noticeExists(id)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            NoticeDTO notice = noticeService.getNoticeById(id);
+            List<String> imagePaths = notice.getImages();
+
+            if (imagePaths == null || imagePaths.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            // Zamiast przesyłać bajty, zwracamy listę URL-i do obrazów
+            List<String> imageUrls = new ArrayList<>();
+            for (int i = 0; i < imagePaths.size(); i++) {
+                imageUrls.add("/api/v1/notices/images/" + id + "/" + i);
+            }
+
+            return ResponseEntity.ok(imageUrls);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

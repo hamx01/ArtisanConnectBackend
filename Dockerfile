@@ -1,5 +1,7 @@
 FROM openjdk:21
 
-COPY target/ArtisanConnectBackend-0.0.1-SNAPSHOT.jar app.jar
+WORKDIR /app
 
-ENTRYPOINT ["java","-jar","/app.jar"]
+COPY target/ArtisanConnectBackend-0.0.1-SNAPSHOT.jar app/artisan.jar
+
+ENTRYPOINT ["java","-jar","app/artisan.jar"]

@@ -2,10 +2,13 @@ services:
   app:
     container_name: artisan
     build: .
-    networks:
-      - artisan_network
     depends_on:
       - db
+    networks:
+      - artisan_network
+    ports:
+        - '8085:8080'
+
 
   db:
     container_name: db

@@ -113,8 +113,8 @@ public class NoticeService {
         }
     }
 
-    public String saveImage(Long noticeId, MultipartFile file) throws IOException {
-        String uploadDir = "src/main/resources/static/images/notices/" + noticeId;
+    public String saveImage(String uploadFolder, Long noticeId, MultipartFile file) throws IOException {
+        String uploadDir = uploadFolder + noticeId;
         Path uploadPath = Paths.get(uploadDir);
 
         if (!Files.exists(uploadPath)) {
@@ -141,12 +141,11 @@ public class NoticeService {
                     .orElse(0);
 
             fileName = baseName + (maxNumber + 1) + extension;
+        } else {
+            throw new IOException("Nie można znaleźć nazwy pliku");
         }
         //koniec szukania nazwy pliku
 
-        if(fileName == null) {
-            throw new IOException("Nie można znaleźć nazwy pliku");
-        }
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
