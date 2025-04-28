@@ -78,12 +78,12 @@ public class ImageController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity deleteImage(@PathVariable("id") String filename) {
+    public ResponseEntity<RequestResponseDTO> deleteImage(@PathVariable("id") String filename) {
         try {
             imageService.deleteImage(uploadDir, filename);
-            return new ResponseEntity<>(HttpStatus.OK);
+            return ResponseEntity.status(HttpStatus.OK).body(new RequestResponseDTO("Image deleted successfully."));
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new RequestResponseDTO(e.getMessage()));
         }
     }
 }

@@ -60,14 +60,13 @@ public class ImageService {
         return resource;
     }
 
-    public String deleteImage(String imageDirectory, String imageName) throws IOException {
+    public void deleteImage(String imageDirectory, String imageName) throws IOException {
         Path imagePath = Path.of(imageDirectory, imageName);
 
         if (Files.exists(imagePath)) {
             Files.delete(imagePath);
-            return "Success";
         } else {
-            return "Failed"; // Handle missing images
+            throw new IOException("File not found");
         }
     }
 
