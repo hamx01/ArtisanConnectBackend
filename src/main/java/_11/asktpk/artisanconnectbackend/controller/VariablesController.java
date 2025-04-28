@@ -6,14 +6,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/vars")
 public class VariablesController {
 
     @GetMapping("/categories")
-    public List<Enums.Category> getAllVariables() {
-        return List.of(Enums.Category.values());
+    public Map<Enums.Category, String> getAllVariables() {
+        return Enums.categoryPL;
     }
 
     @GetMapping("/statuses")
