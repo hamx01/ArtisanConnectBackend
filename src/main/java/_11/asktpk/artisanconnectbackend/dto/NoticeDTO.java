@@ -22,8 +22,6 @@ public class NoticeDTO {
 
     private Enums.Category category;
 
-    private List<String> images;
-
     private Enums.Status status;
 
     private LocalDateTime publishDate;
@@ -32,20 +30,5 @@ public class NoticeDTO {
 
     public NoticeDTO() {
 
-    }
-
-    public NoticeDTO(Long noticeId, String title, Long clientId, String description, Double price,
-                     Enums.Category category, List<String> images, Enums.Status status,
-                     LocalDateTime publishDate, List<AttributesNotice> attributesNotices) {
-        this.noticeId = noticeId;
-        this.title = title;
-        this.clientId = clientId;
-        this.description = description;
-        this.price = price;
-        this.category = category;
-        this.images = images;
-        this.status = status;
-        this.publishDate = publishDate;
-        this.attributesNotices = attributesNotices;
     }
 }

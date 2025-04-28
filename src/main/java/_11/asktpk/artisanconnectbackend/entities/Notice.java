@@ -30,9 +30,6 @@ public class Notice {
     @Enumerated(EnumType.STRING)
     private Category category;
 
-    @ElementCollection
-    private List<String> images;
-
     @Enumerated(EnumType.STRING)
     private Status status;
 
