@@ -43,7 +43,7 @@ public class ImageController {
             }
 
             String newImageName = imageService.saveImageToStorage(uploadDir, file);
-            imageService.addImageUrlToDB(newImageName, noticeId);
+            imageService.addImageNameToDB(newImageName, noticeId);
 
             return ResponseEntity.ok(new RequestResponseDTO("Image uploaded successfully with new name: " + newImageName));
         } catch (Exception e) {

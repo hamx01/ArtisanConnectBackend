@@ -38,7 +38,7 @@ public class ImageService {
         return uniqueFileName;
     }
 
-    public void addImageUrlToDB(String filename, Long noticeId) {
+    public void addImageNameToDB(String filename, Long noticeId) {
         Image image = new Image();
         image.setImageName(filename);
         image.setNoticeId(noticeId);
