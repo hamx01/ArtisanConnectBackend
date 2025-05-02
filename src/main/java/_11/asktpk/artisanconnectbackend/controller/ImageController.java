@@ -77,8 +77,12 @@ public class ImageController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<RequestResponseDTO> deleteImage(@PathVariable("id") String filename) {
+    @DeleteMapping("/delete/{filename}")
+    public ResponseEntity<RequestResponseDTO> deleteImage(@PathVariable("filename") String filename) {
+        if(filename == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new RequestResponseDTO("Filename is empty."));
+        }
+
         try {
             imageService.deleteImage(uploadDir, filename);
             return ResponseEntity.status(HttpStatus.OK).body(new RequestResponseDTO("Image deleted successfully."));

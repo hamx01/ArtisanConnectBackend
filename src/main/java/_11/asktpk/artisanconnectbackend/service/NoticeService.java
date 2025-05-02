@@ -68,8 +68,8 @@ public class NoticeService {
         return toDTO(notice);
     }
 
-    public void addNotice(NoticeDTO dto) {
-        noticeRepository.save(fromDTO(dto));
+    public Long addNotice(NoticeDTO dto) {
+        return noticeRepository.save(fromDTO(dto)).getIdNotice();
     }
 
     public boolean noticeExists(Long id) {

@@ -1,7 +1,7 @@
 spring.application.name=ArtisanConnectBackend
 
 ## PostgreSQL
-spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
+spring.datasource.url=jdbc:postgresql://db:5432/postgres
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.datasource.username=postgres
 spring.datasource.password=postgres
@@ -12,8 +12,9 @@ spring.sql.init.mode=always
 spring.jpa.defer-datasource-initialization=true
 
 # create and drop table, good for testing, production set to none or comment it
-spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.hibernate.ddl-auto=update
 
-file.upload-dir=/Users/andsol/Desktop/uploads
+#file.upload-dir=/Users/andsol/Desktop/uploads
+file.upload-dir=/app/images
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB

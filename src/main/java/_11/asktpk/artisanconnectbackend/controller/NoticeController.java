@@ -1,5 +1,6 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
+import _11.asktpk.artisanconnectbackend.dto.NoticeAdditionDTO;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
@@ -37,22 +38,22 @@ public class NoticeController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<String> addNotice(@RequestBody NoticeDTO dto) {
+    public ResponseEntity<NoticeAdditionDTO> addNotice(@RequestBody NoticeDTO dto) {
         if (!clientService.clientExists(dto.getClientId())) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body("Nie znaleziono klienta o ID: " + dto.getClientId());
+                    .body(new NoticeAdditionDTO("Nie znaleziono klienta o ID: " + dto.getClientId()));
         }
 
         if (dto.getCategory() == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nie ma takiej kategorii");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new NoticeAdditionDTO("Nie ma takiej kategorii"));
         }
 
         dto.setPublishDate(java.time.LocalDateTime.now());
 
-        noticeService.addNotice(dto);
+        Long newNoticeId = noticeService.addNotice(dto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Dodano ogłoszenie.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(new NoticeAdditionDTO(newNoticeId ,"Dodano ogłoszenie."));
     }
 
 

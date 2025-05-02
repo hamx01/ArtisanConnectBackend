@@ -7,4 +7,8 @@ import java.util.List;
 
 public interface ImageRepository extends JpaRepository<Image, Long> {
     List<Image> findByNoticeId(Long noticeId);
+
+    boolean existsImageByImageNameEqualsIgnoreCase(String imageName);
+
+    void deleteByImageNameEquals(String imageName);
 }

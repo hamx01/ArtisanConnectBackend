@@ -5,6 +5,7 @@ import _11.asktpk.artisanconnectbackend.repository.ImageRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ImageService {
     private final ImageRepository imageRepository;
 
@@ -63,6 +65,8 @@ public class ImageService {
     public void deleteImage(String imageDirectory, String imageName) throws IOException {
         Path imagePath = Path.of(imageDirectory, imageName);
 
+        deleteImageRecordFromDB(imageName);
+
         if (Files.exists(imagePath)) {
             Files.delete(imagePath);
         } else {
@@ -79,5 +83,11 @@ public class ImageService {
         return images.stream()
                 .map(Image::getImageName)
                 .collect(Collectors.toList());
+    }
+
+    public void deleteImageRecordFromDB(String imageName) {
+        if(imageRepository.existsImageByImageNameEqualsIgnoreCase(imageName)) {
+            imageRepository.deleteByImageNameEquals(imageName);
+        }
     }
 }
