@@ -1,10 +1,12 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
+import _11.asktpk.artisanconnectbackend.dto.CategoriesDTO;
 import _11.asktpk.artisanconnectbackend.utils.Enums;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -13,8 +15,16 @@ import java.util.Map;
 public class VariablesController {
 
     @GetMapping("/categories")
-    public Map<Enums.Category, String> getAllVariables() {
-        return Enums.categoryPL;
+    public List<CategoriesDTO> getAllVariables() {
+        List<CategoriesDTO> categoriesDTOList = new ArrayList<>();
+        for (Map.Entry<Enums.Category, String> entry : Enums.categoryPL.entrySet()) {
+            CategoriesDTO categoriesDTO = new CategoriesDTO();
+            categoriesDTO.setLabel(entry.getValue());
+            categoriesDTO.setValue(entry.getKey().toString());
+            categoriesDTOList.add(categoriesDTO);
+        }
+
+        return categoriesDTOList;
     }
 
     @GetMapping("/statuses")
