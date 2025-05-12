@@ -28,6 +28,8 @@ public class NoticeDTO {
 
     private List<AttributesNotice> attributesNotices;
 
+    private boolean isWishlisted;
+
     public NoticeDTO() {
 
     }
