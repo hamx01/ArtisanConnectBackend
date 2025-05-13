@@ -5,7 +5,7 @@ import _11.asktpk.artisanconnectbackend.entities.Notice;
 import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
 import _11.asktpk.artisanconnectbackend.repository.NoticeRepository;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
-import _11.asktpk.artisanconnectbackend.repository.WishlistRepository;
+//import _11.asktpk.artisanconnectbackend.service.WishlistService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +18,13 @@ public class NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final ClientRepository clientRepository;
-    private final WishlistRepository wishlistRepository;
+//    private final WishlistRepository wishlistRepository;
+    private final WishlistService wishlistService;
 
-    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository,WishlistRepository wishlistRepository) {
+    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository,WishlistService wishlistService) {
         this.noticeRepository = noticeRepository;
         this.clientRepository = clientRepository;
-        this.wishlistRepository = wishlistRepository;//serwis zamiast repository
+        this.wishlistService = wishlistService;
     }
 
     public Notice fromDTO(NoticeDTO dto) {
@@ -45,11 +46,11 @@ public class NoticeService {
 
     private NoticeDTO toDTO(Notice notice) {
         NoticeDTO dto = new NoticeDTO();
-        Optional<Client> client = clientRepository.findById(1L);
+        Optional<Client> client = clientRepository.findById(1L);//To be updated using AuthService after implementing authentication.
         boolean isWishlisted = false;
         if (client.isPresent()) {
             Client c = client.get();
-        isWishlisted = wishlistRepository.existsByClientAndNotice(c,notice);
+        isWishlisted = wishlistService.isWishlisted(c, notice);
         }
         dto.setNoticeId(notice.getIdNotice());
         dto.setTitle(notice.getTitle());

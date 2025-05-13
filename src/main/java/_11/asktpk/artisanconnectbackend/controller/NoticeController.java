@@ -48,14 +48,12 @@ public class NoticeController {
         if (dto.getCategory() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new NoticeAdditionDTO("Nie ma takiej kategorii"));
         }
-
         dto.setPublishDate(java.time.LocalDateTime.now());
 
         Long newNoticeId = noticeService.addNotice(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new NoticeAdditionDTO(newNoticeId ,"Dodano ogłoszenie."));
     }
-
 
     // TODO: zamiast dodawać tutaj pętlą, musi to robić NoticeService, trzeba zaimplementować odpowienią metodę
     @PostMapping("/bulk_add")

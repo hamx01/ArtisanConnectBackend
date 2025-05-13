@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/wishlist")
 public class WishlistController {
-
     private final WishlistService wishlistService;
     private final ClientService clientService;
     private final NoticeService noticeService;
@@ -30,7 +29,6 @@ public class WishlistController {
     public ResponseEntity<RequestResponseDTO> toggleWishlist(@RequestBody WishlistDTO wishlistDTO) {
         Long noticeId = wishlistDTO.getNoticeId();
         Long clientId = wishlistDTO.getClientId();
-
         NoticeDTO noticeDTO = noticeService.getNoticeById(noticeId);
         if (noticeDTO == null) {
             return ResponseEntity.badRequest().body(new RequestResponseDTO("Notice not found"));
@@ -47,21 +45,15 @@ public class WishlistController {
         }
     }
 
-
-
-    @GetMapping("/{clientId}")
-    public  ResponseEntity<List<WishlistDTO>>  getWishlist(@PathVariable Long clientId) {
-        List<WishlistDTO> wishlist = wishlistService.getWishlistForClientId(clientId);
-        return ResponseEntity.ok(wishlist);
-    }
-//
-//    @GetMapping("/get/all")
-//    public List<NoticeDTO> getAllNotices() {
-//        return noticeService.getAllNotices();
+//    @GetMapping("/{clientId}")
+//    public  ResponseEntity<List<WishlistDTO>>  getWishlist(@PathVariable Long clientId) {
+//        List<WishlistDTO> wishlist = wishlistService.getWishlistForClientId(clientId);
+//        return ResponseEntity.ok(wishlist);
 //    }
-@GetMapping("/")
-public List<NoticeDTO> getWishlistForClient() {
-    Long clientId =1L;
-    return wishlistService.getNoticesInWishlist(clientId);
-}
+
+    @GetMapping("/")
+    public List<NoticeDTO> getWishlistForClient() {
+        Long clientId =1L;
+        return wishlistService.getNoticesInWishlist(clientId);
+    }
 }
