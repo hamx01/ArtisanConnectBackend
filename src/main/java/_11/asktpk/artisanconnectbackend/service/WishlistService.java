@@ -7,20 +7,22 @@ import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.entities.Notice;
 import _11.asktpk.artisanconnectbackend.entities.Wishlist;
 import _11.asktpk.artisanconnectbackend.repository.WishlistRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 @Service
 public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
     private final NoticeService noticeService;
 
-    public WishlistService(WishlistRepository wishlistRepository, NoticeService noticeService) {
+    public WishlistService(WishlistRepository wishlistRepository, @Lazy NoticeService noticeService) {
         this.wishlistRepository = wishlistRepository;
-        this.noticeService = noticeService;//tak robimy
+        this.noticeService = noticeService;
     }
 
     public List<WishlistDTO> getWishlistForClientId(Long clientId) {
