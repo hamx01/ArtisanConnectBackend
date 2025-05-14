@@ -3,7 +3,6 @@ package _11.asktpk.artisanconnectbackend.controller;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
 import _11.asktpk.artisanconnectbackend.dto.RequestResponseDTO;
 import _11.asktpk.artisanconnectbackend.dto.WishlistDTO;
-import _11.asktpk.artisanconnectbackend.entities.Wishlist;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.service.WishlistService;
@@ -53,7 +52,8 @@ public class WishlistController {
 
     @GetMapping("/")
     public List<NoticeDTO> getWishlistForClient() {
-        Long clientId =1L;
+        // TODO: Replace with actual client ID from authentication context
+        Long clientId = 1L;
         return wishlistService.getNoticesInWishlist(clientId);
     }
 }

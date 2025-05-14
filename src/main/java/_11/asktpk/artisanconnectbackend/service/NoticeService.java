@@ -18,10 +18,9 @@ public class NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final ClientRepository clientRepository;
-//    private final WishlistRepository wishlistRepository;
     private final WishlistService wishlistService;
 
-    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository,WishlistService wishlistService) {
+    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository, WishlistService wishlistService) {
         this.noticeRepository = noticeRepository;
         this.clientRepository = clientRepository;
         this.wishlistService = wishlistService;
@@ -46,11 +45,12 @@ public class NoticeService {
 
     private NoticeDTO toDTO(Notice notice) {
         NoticeDTO dto = new NoticeDTO();
-        Optional<Client> client = clientRepository.findById(1L);//To be updated using AuthService after implementing authentication.
+        // TODO: To be updated using AuthService after implementing authentication.
+        Optional<Client> client = clientRepository.findById(1L);
         boolean isWishlisted = false;
         if (client.isPresent()) {
             Client c = client.get();
-        isWishlisted = wishlistService.isWishlisted(c, notice);
+            isWishlisted = wishlistService.isWishlisted(c, notice);
         }
         dto.setNoticeId(notice.getIdNotice());
         dto.setTitle(notice.getTitle());
@@ -78,10 +78,10 @@ public class NoticeService {
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
         return toDTO(notice);
     }
+
     public Notice getNoticeByIdEntity(Long id) {
-        Notice notice = noticeRepository.findById(id)
+        return noticeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
-        return notice;
     }
 
     public Long addNotice(NoticeDTO dto) {
