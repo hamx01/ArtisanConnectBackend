@@ -9,6 +9,7 @@ import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -119,4 +120,20 @@ public class NoticeService {
             throw new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id);
         }
     }
+
+    public boolean isNoticeOwnedByClient(long noticeId, long clientId) {
+        return noticeRepository.existsByIdNoticeAndClientId(noticeId, clientId);
+    }
+
+    public void boostNotice(long noticeId) {
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new EntityNotFoundException("Ogłoszenie o ID " + noticeId + " nie istnieje."));
+
+        notice.setPublishDate(LocalDateTime.now());
+
+        noticeRepository.save(notice);
+
+    }
+
+
 }

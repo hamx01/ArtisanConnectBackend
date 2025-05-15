@@ -106,4 +106,15 @@ public class NoticeController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+    @PostMapping("/boost/{id}")
+    public ResponseEntity boostNotice(@PathVariable("id") long id) {
+        long clientId = 1L;
+        if (!noticeService.isNoticeOwnedByClient(id, clientId)) {
+            throw new EntityNotFoundException("Ogłoszenie nie istnieje lub nie należy do zalogowanego klienta.");
+        }
+        noticeService.boostNotice(id);
+
+        return ResponseEntity.ok("Ogłoszenie zostało pomyślnie wypromowane.");
+    }
 }
