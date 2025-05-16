@@ -1,6 +1,8 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
 import _11.asktpk.artisanconnectbackend.dto.NoticeAdditionDTO;
+import _11.asktpk.artisanconnectbackend.dto.NoticeBoostDTO;
+import _11.asktpk.artisanconnectbackend.dto.RequestResponseDTO;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
@@ -29,7 +31,7 @@ public class NoticeController {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity getNoticeById(@PathVariable long id) {
+    public ResponseEntity<?> getNoticeById(@PathVariable long id) {
         if (noticeService.noticeExists(id)) {
             return ResponseEntity.ok(noticeService.getNoticeById(id));
         } else {
@@ -98,23 +100,22 @@ public class NoticeController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity deleteNotice(@PathVariable("id") long id) {
+    public ResponseEntity<RequestResponseDTO> deleteNotice(@PathVariable("id") long id) {
         if (noticeService.noticeExists(id)) {
             noticeService.deleteNotice(id);
-            return new ResponseEntity<>(HttpStatus.OK);
+            return ResponseEntity.status(HttpStatus.OK).body(new RequestResponseDTO("Pomyślnie usunięto ogłoszenie o ID: " + id));
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new RequestResponseDTO("Nie znaleziono ogłoszenia o ID: " + id));
         }
     }
 
     @PostMapping("/boost/{id}")
-    public ResponseEntity boostNotice(@PathVariable("id") long id) {
-        long clientId = 1L;
-        if (!noticeService.isNoticeOwnedByClient(id, clientId)) {
-            throw new EntityNotFoundException("Ogłoszenie nie istnieje lub nie należy do zalogowanego klienta.");
+    public ResponseEntity<RequestResponseDTO> boostNotice(@PathVariable("id") long clientId, @RequestBody NoticeBoostDTO dto) {
+        if (!noticeService.isNoticeOwnedByClient(dto.getNoticeId(), clientId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new RequestResponseDTO("Ogłoszenie nie istnieje lub nie należy do zalogowanego klienta."));
         }
-        noticeService.boostNotice(id);
+        noticeService.boostNotice(dto.getNoticeId());
 
-        return ResponseEntity.ok("Ogłoszenie zostało pomyślnie wypromowane.");
+        return ResponseEntity.status(HttpStatus.OK).body(new RequestResponseDTO("Ogłoszenie zostało pomyślnie wypromowane."));
     }
 }
