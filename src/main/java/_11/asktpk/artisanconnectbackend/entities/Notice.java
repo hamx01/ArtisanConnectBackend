@@ -39,7 +39,7 @@ public class Notice {
     private List<AttributesNotice> attributesNotices;
 
     @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
-    private List<Orders> orders;
+    private List<Order> orders;
 
     @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
     private List<Payments> payments;

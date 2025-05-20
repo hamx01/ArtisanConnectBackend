@@ -1,7 +1,6 @@
 package _11.asktpk.artisanconnectbackend.entities;
 
 import _11.asktpk.artisanconnectbackend.utils.Enums;
-import _11.asktpk.artisanconnectbackend.utils.Enums.Status;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,7 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "orders")
 @Getter
 @Setter
-public class Orders {
+public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

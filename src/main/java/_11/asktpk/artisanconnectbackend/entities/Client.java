@@ -33,5 +33,5 @@ public class Client {
 //    private List<Notice> notices;
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
-    private List<Orders> orders;
+    private List<Order> orders;
 }

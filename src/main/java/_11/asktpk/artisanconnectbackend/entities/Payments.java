@@ -13,7 +13,7 @@ public class Payments {
 
     @ManyToOne
     @JoinColumn(name = "id_order")
-    private Orders order;
+    private Order order;
 
     @ManyToOne
     @JoinColumn(name = "id_notice")
