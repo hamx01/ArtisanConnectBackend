@@ -3,6 +3,7 @@ package _11.asktpk.artisanconnectbackend.controller;
 import _11.asktpk.artisanconnectbackend.dto.RequestResponseDTO;
 import _11.asktpk.artisanconnectbackend.service.ImageService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -63,18 +64,17 @@ public class ImageController {
     }
 
     @GetMapping("/list/{id}")
-    public ResponseEntity<List<String>> getImagesNamesList(@PathVariable("id") Long noticeId) {
-        if(noticeId == null) {
-            return ResponseEntity.badRequest().body(Collections.singletonList("Notice ID is invalid or does not exist."));
-        }
-
+    public ResponseEntity<?> getImagesNamesList(@PathVariable("id") Long noticeId) {
         List<String> result;
         try {
+            noticeService.getNoticeById(noticeId);
             result = imageService.getImagesList(noticeId);
+            return ResponseEntity.ok(result);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new RequestResponseDTO(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonList(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new RequestResponseDTO(e.getMessage()));
         }
-        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/delete/{filename}")

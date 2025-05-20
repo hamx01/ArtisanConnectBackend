@@ -5,8 +5,10 @@ import _11.asktpk.artisanconnectbackend.entities.Notice;
 import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
 import _11.asktpk.artisanconnectbackend.repository.NoticeRepository;
 import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
-//import _11.asktpk.artisanconnectbackend.service.WishlistService;
 import jakarta.persistence.EntityNotFoundException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,15 +18,21 @@ import java.util.Optional;
 
 @Service
 public class NoticeService {
+    private static final Logger logger = LogManager.getLogger(NoticeService.class);
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     private final NoticeRepository noticeRepository;
     private final ClientRepository clientRepository;
     private final WishlistService wishlistService;
+    private final ImageService imageService;
 
-    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository, WishlistService wishlistService) {
+    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository, WishlistService wishlistService, ImageService imageService) {
         this.noticeRepository = noticeRepository;
         this.clientRepository = clientRepository;
         this.wishlistService = wishlistService;
+        this.imageService = imageService;
     }
 
     public Notice fromDTO(NoticeDTO dto) {
@@ -116,6 +124,22 @@ public class NoticeService {
     public void deleteNotice(Long id) {
         if (noticeExists(id)) {
             noticeRepository.deleteById(id);
+
+            List<String> imagesList = new ArrayList<>();
+
+            try {
+                imagesList = imageService.getImagesList(id);
+            } catch (Exception e) {
+                logger.info("There weren't any images for notice with ID: " + id + ". Skipping deletion of images. Message: " + e.getMessage());
+            }
+
+            try {
+                for (String imageName : imagesList) {
+                    imageService.deleteImage(uploadDir, imageName);
+                }
+            } catch (Exception e) {
+                logger.info("There were some issues while deleting images for notice with ID: " + id + ". Message: " + e.getMessage());
+            }
         } else {
             throw new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id);
         }
