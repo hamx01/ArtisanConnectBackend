@@ -43,4 +43,20 @@ public class Enums {
     public enum Status {
         ACTIVE, INACTIVE
     }
+
+    public enum OrderType {
+        ACTIVATION,
+        BOOST
+    }
+
+
+    public enum OrderStatus {
+        PENDING, COMPLETED, CANCELLED
+    }
+
+    public enum PaymentStatus{
+        PENDING, CORRECT, INCORRECT
+    }
+
+    
 }

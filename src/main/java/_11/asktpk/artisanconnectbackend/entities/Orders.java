@@ -1,18 +1,25 @@
 package _11.asktpk.artisanconnectbackend.entities;
 
+import _11.asktpk.artisanconnectbackend.utils.Enums;
 import _11.asktpk.artisanconnectbackend.utils.Enums.Status;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders")
+@Getter
+@Setter
 public class Orders {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idOrder;
+    private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "id_user")
+    @JoinColumn(name = "id_client")
     private Client client;
 
     @ManyToOne
@@ -20,7 +27,18 @@ public class Orders {
     private Notice notice;
 
     @Enumerated(EnumType.STRING)
-    private Status status;
+    @Column(nullable = false)
+    private Enums.OrderType orderType;
 
-    // Getters, setters, and constructors
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Enums.OrderStatus status;
+
+    @Column(nullable = false)
+    private Double amount;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 }
