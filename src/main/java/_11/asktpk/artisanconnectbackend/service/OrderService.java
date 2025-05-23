@@ -71,4 +71,9 @@ public class OrderService {
         return order.getId();
 
     }
+
+    public Order getOrderById(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono zamówienia o ID: " + id));
+    }
 }

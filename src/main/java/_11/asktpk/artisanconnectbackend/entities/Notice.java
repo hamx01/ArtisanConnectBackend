@@ -41,6 +41,6 @@ public class Notice {
     @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
     private List<Order> orders;
 
-    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
-    private List<Payments> payments;
+//    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
+//    private List<Payment> payment;
 }
