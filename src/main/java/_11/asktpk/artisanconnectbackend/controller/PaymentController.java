@@ -1,5 +1,10 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
+import _11.asktpk.artisanconnectbackend.entities.Notice;
+import _11.asktpk.artisanconnectbackend.entities.Order;
+import _11.asktpk.artisanconnectbackend.entities.Payment;
+import _11.asktpk.artisanconnectbackend.repository.PaymentRepository;
+import _11.asktpk.artisanconnectbackend.utils.Enums;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -23,6 +30,12 @@ public class PaymentController {
     private String sellerSecurityCode;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentController.class);
+
+    private final PaymentRepository paymentRepository;
+
+    public PaymentController(PaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
+    }
 
     @PostMapping(value = "/notification", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<String> handleTpayNotification(@RequestParam Map<String, String> params) {
@@ -45,10 +58,37 @@ public class PaymentController {
             return ResponseEntity.status(400).body("INVALID CHECKSUM");
         }
 
-        if ("true".equals(trStatus)) {
-            log.info("✅ Transakcja opłacona: tr_id={}, kwota={}", trId, params.get("tr_paid"));
-        } else if ("chargeback".equals(trStatus)) {
-            log.warn("⚠️ Chargeback: {}", trId);
+        Optional<Payment> optionalPayment = paymentRepository.findByTransactionId(trId);
+        if (optionalPayment.isPresent()) {
+            Payment payment = optionalPayment.get();
+
+            if ("true".equalsIgnoreCase(trStatus) || "PAID".equalsIgnoreCase(trStatus)) {
+                log.info("✅ Transakcja opłacona: tr_id={}, kwota={}", trId, params.get("tr_paid"));
+                payment.setStatus(Enums.PaymentStatus.CORRECT);
+
+                if (payment.getOrder() != null) {
+                    Order order = payment.getOrder();
+                    order.setStatus(Enums.OrderStatus.COMPLETED);
+                    Notice notice = order.getNotice();
+                    if (order.getOrderType() == Enums.OrderType.ACTIVATION) {
+                        notice.setStatus(Enums.Status.ACTIVE);
+                    } else if (order.getOrderType() == Enums.OrderType.BOOST) {
+                        notice.setPublishDate(LocalDateTime.now());
+                    }
+                }
+
+            } else if ("false".equalsIgnoreCase(trStatus)) {
+                log.warn("❌ Transakcja nieudana: {}", trId);
+                payment.setStatus(Enums.PaymentStatus.INCORRECT);
+
+                if (payment.getOrder() != null) {
+                    payment.getOrder().setStatus(Enums.OrderStatus.CANCELLED);
+                }
+            }
+
+            paymentRepository.save(payment);
+        } else {
+            log.warn("⚠️ Brak płatności o tr_id={}", trId);
         }
 
         return ResponseEntity.ok("TRUE");
