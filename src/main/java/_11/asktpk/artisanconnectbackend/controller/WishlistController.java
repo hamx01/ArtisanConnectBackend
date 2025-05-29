@@ -24,10 +24,10 @@ public class WishlistController {
         this.noticeService = noticeService;
     }
 
-    @PostMapping("/toggle")
-    public ResponseEntity<RequestResponseDTO> toggleWishlist(@RequestBody WishlistDTO wishlistDTO) {
-        Long noticeId = wishlistDTO.getNoticeId();
-        Long clientId = wishlistDTO.getClientId();
+    @PostMapping("/toggle/{noticeId}")
+    public ResponseEntity<RequestResponseDTO> toggleWishlist(@PathVariable Long noticeId) {
+
+        Long clientId = 1L;
         NoticeDTO noticeDTO = noticeService.getNoticeById(noticeId);
         if (noticeDTO == null) {
             return ResponseEntity.badRequest().body(new RequestResponseDTO("Notice not found"));
