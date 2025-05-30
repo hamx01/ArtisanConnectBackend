@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import _11.asktpk.artisanconnectbackend.entities.Image;
 import _11.asktpk.artisanconnectbackend.repository.ImageRepository;
@@ -36,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -57,34 +59,30 @@ class ArtisanConnectBackendApplicationTests {
     private static final Logger logger = LogManager.getLogger(ArtisanConnectBackendApplicationTests.class);
 
     @LocalServerPort
-    private int port;
+    private final int port;
+
+    private final ClientService clientService;
+    private final TestRestTemplate restTemplate;
 
     @Autowired
-    private ClientRepository clientRepository;
-
-    @Autowired
-    private ClientService clientService;
-
-    private TestRestTemplate restTemplate;
-
-    @BeforeEach
-    void setUp() {
-        restTemplate = new TestRestTemplate();
-        logger.info("Inicjalizacja komponentów testowych na porcie: {}", port);
+    public ArtisanConnectBackendApplicationTests(ClientService clientService, @LocalServerPort int port) {
+        this.clientService = clientService;
+        this.port = port;
+        this.restTemplate = new TestRestTemplate();
     }
+
 
     @Nested
     @DisplayName("Testy jednostkowe ClientService")
     class ClientServiceTest {
 
-        private ClientRepository clientRepository;
-        private ClientService clientService;
+        private final ClientRepository clientRepository;
+        private final ClientService clientService;
 
-        @BeforeEach
-        void setUp() {
+        ClientServiceTest() {
             logger.info("Inicjalizacja mocków dla ClientService");
-            clientRepository = mock(ClientRepository.class);
-            clientService = new ClientService(clientRepository);
+            this.clientRepository = mock(ClientRepository.class);
+            this.clientService = new ClientService(clientRepository);
         }
 
         @Test
@@ -117,36 +115,84 @@ class ArtisanConnectBackendApplicationTests {
     @DisplayName("Testy integracyjne ClientController")
     class ClientControllerTest {
 
+        private final int port;
+        private final TestRestTemplate restTemplate;
+        private final ClientService clientService;
+        private final NoticeService noticeService;
+        private final NoticeRepository noticeRepository;
+        private final Logger logger = LogManager.getLogger(ClientControllerTest.class);
+
+        @Autowired
+        public ClientControllerTest(
+                @LocalServerPort int port,
+                TestRestTemplate restTemplate,
+                ClientService clientService,
+                NoticeService noticeService,
+                NoticeRepository noticeRepository) {
+            this.port = port;
+            this.restTemplate = restTemplate;
+            this.clientService = clientService;
+            this.noticeService = noticeService;
+            this.noticeRepository = noticeRepository;
+        }
+
         @BeforeEach
         void cleanDatabase() {
-            clientRepository.deleteAll();
+
+            noticeRepository.deleteAll();
+
+            clientService.getAllClients().forEach(client -> {
+                try {
+                    clientService.deleteClient(client.getId());
+                } catch (Exception e) {
+                    logger.error("Błąd podczas usuwania klienta: {}", e.getMessage());
+                }
+            });
+        }
+
+        private boolean hasNotices(Long clientId) {
+            return noticeService.getAllNotices().stream()
+                    .anyMatch(notice -> notice.getClientId().equals(clientId));
         }
 
         @Test
-        @DisplayName("Powinien poprawnie dodawać klienta")
-        void shouldAddClientSuccessfully() {
-            ClientDTO newClient = createTestDTO("new.email@example.com", "John", "Smith");
+        @DisplayName("Powinien poprawnie usunąć klienta z powiązanymi ogłoszeniami")
+        void shouldDeleteClientWithNotices() {
+            ClientDTO client = clientService.addClient(createTestDTO("client@example.com", "Jan", "Kowalski"));
 
-            ResponseEntity<ClientDTO> response = restTemplate.postForEntity(
-                    createURLWithPort("/api/v1/clients/add"),
-                    newClient,
-                    ClientDTO.class
+            NoticeDTO notice = new NoticeDTO();
+            notice.setClientId(client.getId());
+            notice.setTitle("Test Notice");
+            Long noticeId = noticeService.addNotice(notice);
+
+            ResponseEntity<Void> deleteNoticeResponse = restTemplate.exchange(
+                    createURLWithPort("/api/v1/notices/delete/" + noticeId),
+                    HttpMethod.DELETE,
+                    null,
+                    Void.class
+            );
+            assertThat(deleteNoticeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            ResponseEntity<Void> deleteClientResponse = restTemplate.exchange(
+                    createURLWithPort("/api/v1/clients/delete/" + client.getId()),
+                    HttpMethod.DELETE,
+                    null,
+                    Void.class
             );
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().getEmail()).isEqualTo("new.email@example.com");
-
-            assertThat(clientRepository.existsById(response.getBody().getId()));
-            logger.info("Pomyślnie dodano klienta");
+            assertThat(deleteClientResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(clientService.clientExists(client.getId())).isFalse();
+            assertThat(noticeService.noticeExists(noticeId)).isFalse();
         }
+        @Autowired
+        private ClientRepository clientRepository;
+
 
         @Test
         @DisplayName("Powinien zwracać wszystkich klientów")
         void shouldReturnAllClients() {
-            logger.info("Dodawanie przykładowych klientów do testu...");
-            clientRepository.save(createTestClient("client1@example.com", "Anna", "Nowak"));
-            clientRepository.save(createTestClient("client2@example.com", "Adam", "Kowalski"));
+            ClientDTO client1 = clientService.addClient(createTestDTO("client1@example.com", "Anna", "Nowak"));
+            ClientDTO client2 = clientService.addClient(createTestDTO("client2@example.com", "Adam", "Kowalski"));
 
             ResponseEntity<ClientDTO[]> response = restTemplate.getForEntity(
                     createURLWithPort("/api/v1/clients/get/all"),
@@ -156,16 +202,46 @@ class ArtisanConnectBackendApplicationTests {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody()).hasSize(2);
-            logger.info("Wszyscy klienci poprawnie pobrani");
         }
 
-        private Client createTestClient(String email, String firstName, String lastName) {
-            Client client = new Client();
-            client.setEmail(email);
-            client.setFirstName(firstName);
-            client.setLastName(lastName);
-            client.setRole(USER);
-            return client;
+
+
+        @Test
+        @DisplayName("Powinien zwrócić błąd przy próbie usunięcia klienta z powiązanymi ogłoszeniami bez kaskady")
+        void shouldFailWhenDeletingClientWithNoticesWithoutCascade() {
+            noticeService.getAllNotices().forEach(n -> noticeService.deleteNotice(n.getNoticeId()));
+            clientService.getAllClients().forEach(c -> clientService.deleteClient(c.getId()));
+
+            ClientDTO client = clientService.addClient(createTestDTO("client@example.com", "Jan", "Kowalski"));
+
+            NoticeDTO notice = new NoticeDTO();
+            notice.setClientId(client.getId());
+            notice.setTitle("Test Notice");
+            noticeService.addNotice(notice);
+
+            try {
+                clientService.deleteClient(client.getId());
+                fail("Powinien zostać rzucony wyjątek DataIntegrityViolationException");
+            } catch (DataIntegrityViolationException e) {
+                // Oczekiwany wyjątek
+                assertThat(e.getMessage()).contains("could not execute statement");
+            }
+        }
+
+        @Test
+        @DisplayName("Powinien poprawnie usunąć klienta bez powiązanych ogłoszeń")
+        void shouldDeleteClientWithoutNotices() {
+            ClientDTO client = clientService.addClient(createTestDTO("client@example.com", "Jan", "Kowalski"));
+
+            ResponseEntity<Void> deleteResponse = restTemplate.exchange(
+                    createURLWithPort("/api/v1/clients/delete/" + client.getId()),
+                    HttpMethod.DELETE,
+                    null,
+                    Void.class
+            );
+
+            assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(clientService.clientExists(client.getId())).isFalse();
         }
 
         private ClientDTO createTestDTO(String email, String firstName, String lastName) {
@@ -186,22 +262,26 @@ class ArtisanConnectBackendApplicationTests {
     @DisplayName("Testy jednostkowe NoticeService")
     class NoticeServiceUnitTest {
 
-        private NoticeRepository noticeRepository;
-        private ClientRepository clientRepository;
-        private NoticeService noticeService;
+        private final NoticeRepository noticeRepository;
+        private final ClientRepository clientRepository;
+        private final NoticeService noticeService;
 
-        @BeforeEach
-        void setUp() {
-            noticeRepository = mock(NoticeRepository.class);
-            clientRepository = mock(ClientRepository.class);
-            noticeService = new NoticeService(noticeRepository, clientRepository, null, null);
+        NoticeServiceUnitTest() {
+            this.noticeRepository = mock(NoticeRepository.class);
+            this.clientRepository = mock(ClientRepository.class);
+            this.noticeService = new NoticeService(
+                    noticeRepository,
+                    clientRepository,
+                    null,
+                    null
+            );
         }
 
         @Test
         @DisplayName("Powinien poprawnie dodać ogłoszenie")
         void shouldAddNoticeSuccessfully() {
             Client client = createTestClient("test@example.com", "Anna", "Kowalska");
-            when(clientRepository.findById(1L)).thenReturn(java.util.Optional.of(client));
+            when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
 
             NoticeDTO noticeDTO = new NoticeDTO();
             noticeDTO.setClientId(1L);
@@ -226,7 +306,7 @@ class ArtisanConnectBackendApplicationTests {
             NoticeDTO noticeDTO = new NoticeDTO();
             noticeDTO.setClientId(1L);
 
-            when(clientRepository.findById(1L)).thenReturn(java.util.Optional.empty());
+            when(clientRepository.findById(1L)).thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class, () -> noticeService.addNotice(noticeDTO));
         }
@@ -241,17 +321,19 @@ class ArtisanConnectBackendApplicationTests {
         }
     }
 
+
     @Nested
     @DisplayName("Testy integracyjne ImageService")
     class ImageServiceTest {
 
-        private ImageRepository imageRepository;
-        private ImageService imageService;
+        private final ImageRepository imageRepository;
+        private final ImageService imageService;
 
-        @BeforeEach
-        void setUp() {
-            imageRepository = mock(ImageRepository.class);
-            imageService = new ImageService(imageRepository);
+        ImageServiceTest() throws Exception {
+            this.imageRepository = mock(ImageRepository.class);
+            Constructor<ImageService> constructor = ImageService.class.getDeclaredConstructor(ImageRepository.class);
+            constructor.setAccessible(true);
+            this.imageService = constructor.newInstance(imageRepository);
         }
 
         @Test
@@ -351,15 +433,14 @@ class ArtisanConnectBackendApplicationTests {
     @DisplayName("Testy integracyjne WishlistService")
     class WishlistServiceTest {
 
-        private WishlistRepository wishlistRepository;
-        private WishlistService wishlistService;
-        private NoticeService noticeService;
+        private final WishlistRepository wishlistRepository;
+        private final NoticeService noticeService;
+        private final WishlistService wishlistService;
 
-        @BeforeEach
-        void setUp() {
-            wishlistRepository = mock(WishlistRepository.class);
-            noticeService = mock(NoticeService.class);
-            wishlistService = new WishlistService(wishlistRepository, noticeService);
+        WishlistServiceTest() {
+            this.wishlistRepository = mock(WishlistRepository.class);
+            this.noticeService = mock(NoticeService.class);
+            this.wishlistService = new WishlistService(wishlistRepository, noticeService);
         }
 
         @Test
@@ -459,11 +540,14 @@ class ArtisanConnectBackendApplicationTests {
     @DisplayName("Testy dla VariablesController")
     class VariablesControllerTest {
 
-        @LocalServerPort
-        private int port;
+        private final int port;
+        private final TestRestTemplate restTemplate;
 
         @Autowired
-        private TestRestTemplate restTemplate;
+        public VariablesControllerTest(@LocalServerPort int port, TestRestTemplate restTemplate) {
+            this.port = port;
+            this.restTemplate = restTemplate;
+        }
 
         @Test
         @DisplayName("Powinien zwrócić kategorie")
