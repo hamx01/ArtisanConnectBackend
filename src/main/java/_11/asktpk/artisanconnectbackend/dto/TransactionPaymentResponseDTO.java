@@ -54,6 +54,27 @@ import lombok.Setter;
             private double amountPaid;
             private DateInfo date;
         }
+
+        @Override
+        public String toString() {
+            return "YourClassName{" +
+                    "result='" + result + '\'' +
+                    ", requestId='" + requestId + '\'' +
+                    ", transactionId='" + transactionId + '\'' +
+                    ", title='" + title + '\'' +
+                    ", posId='" + posId + '\'' +
+                    ", status='" + status + '\'' +
+                    ", date=" + date +
+                    ", amount=" + amount +
+                    ", currency='" + currency + '\'' +
+                    ", description='" + description + '\'' +
+                    ", hiddenDescription='" + hiddenDescription + '\'' +
+                    ", payer=" + payer +
+                    ", payments=" + payments +
+                    ", transactionPaymentUrl='" + transactionPaymentUrl + '\'' +
+                    '}';
+        }
+
     }
 
 
