@@ -43,8 +43,10 @@ public class OrderController {
         paymentDescription += order.getNotice().getTitle();
         TransactionPaymentRequestDTO request = new TransactionPaymentRequestDTO(
                 order.getAmount(), paymentDescription, payer);
+
         String response = paymentService.createTransaction(order,authPaymentDTO.getAccess_token(), request);
         System.out.println(response);
+        System.out.println(request);
 
         return ResponseEntity.ok(response);
     }
