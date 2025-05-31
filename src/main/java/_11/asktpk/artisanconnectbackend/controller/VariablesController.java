@@ -13,7 +13,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/vars")
 public class VariablesController {
-
     @GetMapping("/categories")
     public List<CategoriesDTO> getAllVariables() {
         List<CategoriesDTO> categoriesDTOList = new ArrayList<>();
@@ -31,10 +30,4 @@ public class VariablesController {
     public List<Enums.Status> getAllStatuses() {
         return List.of(Enums.Status.values());
     }
-
-    @GetMapping("/roles")
-    public List<Enums.Role> getAllRoles() {
-        return List.of(Enums.Role.values());
-    }
-
 }
