@@ -73,6 +73,8 @@ public class PaymentService {
             payment.setTransactionPaymentUrl(response.getTransactionPaymentUrl());
             paymentRepository.save(payment);
 
+            System.out.println(response);
+
             return response.getTransactionPaymentUrl();
         }
 
