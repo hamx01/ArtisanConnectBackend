@@ -36,8 +36,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
 
-            if (jwtUtil.isBlacklisted(jwt)) {
+            if (jwtUtil.isBlacklisted(jwt) || !jwtUtil.isLatestToken(jwt)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                String jsonResponse = "{\"error\": \"Token is invalid or expired. Please login again.\"}";
+                response.getWriter().write(jsonResponse);
                 return;
             }
 

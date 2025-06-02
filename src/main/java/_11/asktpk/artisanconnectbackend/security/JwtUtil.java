@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -40,11 +37,27 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
+    private final Map<String, String> userActiveTokens = new ConcurrentHashMap<>();
+
+    public boolean isLatestToken(String token) {
+        String email = extractEmail(token);
+        String tokenId = extractTokenId(token);
+        String latestTokenId = userActiveTokens.get(email);
+
+        return latestTokenId != null && latestTokenId.equals(tokenId);
+    }
+
     public String generateToken(String email, String role, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
         claims.put("userId", userId);
-        return createToken(claims, email);
+        claims.put("tokenId", UUID.randomUUID().toString());
+
+        String token = createToken(claims, email);
+
+        userActiveTokens.put(email, extractTokenId(token));
+
+        return token;
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -55,6 +68,10 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String extractTokenId(String token) {
+        return extractAllClaims(token).get("tokenId", String.class);
     }
 
     public String extractEmail(String token) {

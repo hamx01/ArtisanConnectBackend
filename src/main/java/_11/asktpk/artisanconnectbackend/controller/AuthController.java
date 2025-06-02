@@ -5,6 +5,7 @@ import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.security.JwtUtil;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -33,6 +35,7 @@ public class AuthController {
 
             String token = jwtUtil.generateToken(client.getEmail(), userRole, userId);
 
+            log.info("Logged in as " + client.getEmail());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new AuthResponseDTO(userId, userRole, token));
         } else {
@@ -53,6 +56,8 @@ public class AuthController {
                 savedClient.getRole().getRole(),
                 savedClient.getId()
         );
+
+        log.info("Registered as " + savedClient.getEmail());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new AuthResponseDTO(
