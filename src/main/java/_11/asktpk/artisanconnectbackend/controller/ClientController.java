@@ -24,16 +24,16 @@ public class ClientController {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity getClientById(@PathVariable long id) {
+    public ResponseEntity<?> getClientById(@PathVariable long id) {
         if(clientService.getClientById(id) != null) {
-            return new ResponseEntity(clientService.getClientById(id), HttpStatus.OK);
+            return new ResponseEntity<>(clientService.getClientByIdDTO(id), HttpStatus.OK);
         } else {
-            return new ResponseEntity(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
     @PostMapping("/add")
-    public ResponseEntity addClient(@RequestBody ClientDTO clientDTO) {
+    public ResponseEntity<?> addClient(@RequestBody ClientDTO clientDTO) {
         if(clientService.clientExists(clientDTO.getId())) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         } else {
@@ -43,7 +43,7 @@ public class ClientController {
 
     // TODO: do zrobienia walidacja danych
     @PutMapping("/edit/{id}")
-    public ResponseEntity updateClient(@PathVariable("id") long id, @RequestBody ClientDTO clientDTO) {
+    public ResponseEntity<?> updateClient(@PathVariable("id") long id, @RequestBody ClientDTO clientDTO) {
         if(clientService.clientExists(id)) {
             return new ResponseEntity<>(clientService.updateClient(id, clientDTO),HttpStatus.OK);
         } else {
@@ -52,7 +52,7 @@ public class ClientController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity deleteClient(@PathVariable("id") long id) {
+    public ResponseEntity<?> deleteClient(@PathVariable("id") long id) {
         if(clientService.clientExists(id)) {
             clientService.deleteClient(id);
             return new ResponseEntity<>(HttpStatus.OK);

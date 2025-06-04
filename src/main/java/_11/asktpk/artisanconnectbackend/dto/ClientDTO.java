@@ -6,8 +6,6 @@ import lombok.Setter;
 
 import jakarta.validation.constraints.Email;
 
-import _11.asktpk.artisanconnectbackend.entities.Role;
-
 @Getter @Setter
 public class ClientDTO {
     private Long id;
@@ -18,5 +16,5 @@ public class ClientDTO {
     private String firstName;
     private String lastName;
     private String image;
-    private Role role;
+    private String role;
 }

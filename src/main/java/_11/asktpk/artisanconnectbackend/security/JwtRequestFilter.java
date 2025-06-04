@@ -1,5 +1,7 @@
 package _11.asktpk.artisanconnectbackend.security;
 
+import _11.asktpk.artisanconnectbackend.dto.RequestResponseDTO;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,20 +38,26 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
 
-            if (jwtUtil.isBlacklisted(jwt) || !jwtUtil.isLatestToken(jwt)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                String jsonResponse = "{\"error\": \"Token is invalid or expired. Please login again.\"}";
-                response.getWriter().write(jsonResponse);
-                return;
-            }
-
             try {
+                if (jwtUtil.isBlacklisted(jwt) || !jwtUtil.isLatestToken(jwt)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    String jsonResponse = "{\"error\": \"Token is invalid or expired. Please login again.\"}";
+                    response.getWriter().write(jsonResponse);
+                    return;
+                }
+
+
                 email = jwtUtil.extractEmail(jwt);
+            } catch (ExpiredJwtException expiredJwtException) {
+                logger.error(expiredJwtException.getMessage());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             } catch (Exception e) {
                 logger.error(e.getMessage());
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write(new RequestResponseDTO(e.getMessage()).toJSON());
                 return;
             }
         }

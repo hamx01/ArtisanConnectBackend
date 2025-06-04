@@ -53,7 +53,7 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(
                 savedClient.getEmail(),
-                savedClient.getRole().getRole(),
+                savedClient.getRole(),
                 savedClient.getId()
         );
 
@@ -62,7 +62,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new AuthResponseDTO(
                         savedClient.getId(),
-                        savedClient.getRole().getRole(),
+                        savedClient.getRole(),
                         token
                 ));
     }

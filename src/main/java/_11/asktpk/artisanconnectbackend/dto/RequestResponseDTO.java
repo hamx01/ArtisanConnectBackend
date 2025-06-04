@@ -10,4 +10,8 @@ public class RequestResponseDTO {
     public RequestResponseDTO(String message) {
         this.message = message;
     }
+
+    public String toJSON() {
+        return "{\"message\":\"" + message + "\"}";
+    }
 }

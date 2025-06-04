@@ -7,4 +7,6 @@ import _11.asktpk.artisanconnectbackend.entities.Role;
 @Repository
 public interface RolesRepository extends JpaRepository<Role, String> {
     Role findRoleById(Long id);
+
+    Role findRoleByRole(String role);
 }
