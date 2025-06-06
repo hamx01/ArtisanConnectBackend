@@ -94,6 +94,10 @@ public class ClientService {
         return toDto(clientRepository.save(fromDto(clientDTO)));
     }
 
+    public Client saveClientToDB(Client client) {
+        return clientRepository.save(client);
+    }
+
     public ClientDTO updateClient(long id, ClientDTO clientDTO) {
         Client existingClient = clientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
@@ -133,5 +137,9 @@ public class ClientService {
 
     public Client getClientByEmail(String email) {
         return clientRepository.findByEmail(email);
+    }
+
+    public Role getUserRole() {
+        return rolesRepository.findRoleByRole("USER");
     }
 }

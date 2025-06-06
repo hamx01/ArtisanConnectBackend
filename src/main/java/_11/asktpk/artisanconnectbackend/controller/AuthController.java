@@ -6,12 +6,12 @@ import _11.asktpk.artisanconnectbackend.security.JwtUtil;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -35,7 +35,7 @@ public class AuthController {
 
             String token = jwtUtil.generateToken(client.getEmail(), userRole, userId);
 
-            log.info("Logged in as " + client.getEmail());
+            log.info("User logged in with {}", client.getEmail());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new AuthResponseDTO(userId, userRole, token));
         } else {
@@ -57,7 +57,7 @@ public class AuthController {
                 savedClient.getId()
         );
 
-        log.info("Registered as " + savedClient.getEmail());
+        log.info("New user registered with {}", savedClient.getEmail());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new AuthResponseDTO(
@@ -78,5 +78,49 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new RequestResponseDTO("Invalid token"));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> authenticateWithGoogle(@RequestBody GoogleAuthRequestDTO dto) {
+        try {
+            String accessToken = dto.getGoogleToken();
+            String googleUserInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    googleUserInfoUrl, HttpMethod.GET, entity, Map.class);
+
+            Map<String, Object> userInfo = response.getBody();
+
+//                String googleId = (String) userInfo.get("sub");  Potencjalnie możemy używać googlowskiego ID, ale to ma konflikt z naszym generowanym
+            assert userInfo != null;
+            String email = (String) userInfo.get("email");
+            String name = (String) userInfo.get("name");
+
+            Client client = clientService.getClientByEmail(email);
+            if (client == null) {
+                client = new Client();
+                client.setEmail(email);
+                client.setFirstName(name);
+                client.setRole(clientService.getUserRole()); // to pobiera po prostu role "USER" z tabeli w bazie
+                clientService.saveClientToDB(client);
+            }
+
+            String jwt = jwtUtil.generateToken(client.getEmail(), client.getRole().getRole(), client.getId());
+
+            log.info("User authenticated with google: {}", email);
+            return ResponseEntity.ok(new AuthResponseDTO(client.getId(), client.getRole().getRole(), jwt));
+        } catch (HttpClientErrorException httpClientErrorException) {
+            log.error("Token is invalid or expired");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new RequestResponseDTO("Invalid access token"));
+        } catch (Exception e) {
+            log.error("Error while checking Google access token", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new RequestResponseDTO("Authentication Error (Google): " + e.getMessage()));
+        }
     }
 }
