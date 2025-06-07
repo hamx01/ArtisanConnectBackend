@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 
-import static _11.asktpk.artisanconnectbackend.utils.Enums.Role.USER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -79,10 +78,10 @@ class ArtisanConnectBackendApplicationTests {
         private final ClientRepository clientRepository;
         private final ClientService clientService;
 
-        ClientServiceTest() {
+        ClientServiceTest(ClientRepository clientRepository, ClientService clientService) {
             logger.info("Inicjalizacja mocków dla ClientService");
-            this.clientRepository = mock(ClientRepository.class);
-            this.clientService = new ClientService(clientRepository);
+            this.clientRepository = clientRepository;
+            this.clientService = clientService;
         }
 
         @Test
@@ -106,7 +105,7 @@ class ArtisanConnectBackendApplicationTests {
             client.setFirstName(firstName);
             client.setLastName(lastName);
             client.setEmail(firstName.toLowerCase() + "." + lastName.toLowerCase() + "@example.com");
-            client.setRole(USER);
+            client.setRole(clientService.getUserRole());
             return client;
         }
     }
@@ -249,7 +248,7 @@ class ArtisanConnectBackendApplicationTests {
             clientDTO.setEmail(email);
             clientDTO.setFirstName(firstName);
             clientDTO.setLastName(lastName);
-            clientDTO.setRole(USER);
+            clientDTO.setRole("USER");
             return clientDTO;
         }
 
