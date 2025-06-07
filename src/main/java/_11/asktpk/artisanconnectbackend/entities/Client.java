@@ -1,11 +1,11 @@
 package _11.asktpk.artisanconnectbackend.entities;
 
-import _11.asktpk.artisanconnectbackend.utils.Enums.Role;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -24,14 +24,15 @@ public class Client {
 
     private String lastName;
 
-    private String image; // Optional field
+    private String image;
 
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "role_id", referencedColumnName = "id")
     private Role role;
-
-//    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
-//    private List<Notice> notices;
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
     private List<Order> orders;
+
+    @CreationTimestamp
+    private Date createdAt;
 }

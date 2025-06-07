@@ -1,10 +1,15 @@
-INSERT INTO clients (email, first_name, image, last_name, password, role)
+INSERT INTO roles (id, rolename)
 VALUES
-    ('dignissim.tempor.arcu@aol.ca', 'Diana', 'null', 'Harrison', 'password', 'USER'),
-    ('john.doe@example.com', 'John', 'null', 'Doe', 'password123', 'ADMIN'),
-    ('jane.smith@example.com', 'Jane', 'null', 'Smith', 'securepass', 'USER'),
-    ('michael.brown@example.com', 'Michael', 'null', 'Brown', 'mypassword', 'USER'),
-    ('emily.jones@example.com', 'Emily', 'null', 'Jones', 'passw0rd', 'USER');
+    (1, 'USER'),
+    (2, 'ADMIN');
+
+INSERT INTO clients (email, first_name, last_name, password, role_id)
+VALUES
+    ('dignissim.tempor.arcu@aol.ca', 'Diana', 'Harrison', 'password', 1),
+    ('john.doe@example.com', 'John', 'Doe', 'password123', 2),
+    ('jane.smith@example.com', 'Jane', 'Smith', 'securepass', 1),
+    ('michael.brown@example.com', 'Michael', 'Brown', 'mypassword', 1),
+    ('emily.jones@example.com', 'Emily', 'Jones', 'passw0rd', 1);
 
 
 INSERT INTO notice (title, description, client_id, price, category, status, publish_date) VALUES

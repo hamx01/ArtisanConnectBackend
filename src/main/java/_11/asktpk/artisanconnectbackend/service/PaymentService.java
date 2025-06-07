@@ -69,9 +69,11 @@ public class PaymentService {
 
             payment.setStatus(Enums.PaymentStatus.PENDING);
 
-            payment.setTransactionId(response.getTransactionId());
+            payment.setTransactionId(response.getTitle());
             payment.setTransactionPaymentUrl(response.getTransactionPaymentUrl());
             paymentRepository.save(payment);
+
+            System.out.println(response);
 
             return response.getTransactionPaymentUrl();
         }
