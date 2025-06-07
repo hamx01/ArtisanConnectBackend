@@ -53,6 +53,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             } catch (ExpiredJwtException expiredJwtException) {
                 logger.error(expiredJwtException.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write(new RequestResponseDTO(expiredJwtException.getMessage()).toJSON());
                 return;
             } catch (Exception e) {
                 logger.error(e.getMessage());
