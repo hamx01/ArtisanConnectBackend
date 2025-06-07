@@ -1,9 +1,14 @@
 package _11.asktpk.artisanconnectbackend.service;
 
+import _11.asktpk.artisanconnectbackend.dto.AuthRequestDTO;
 import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
+import _11.asktpk.artisanconnectbackend.dto.ClientRegistrationDTO;
 import _11.asktpk.artisanconnectbackend.entities.Client;
+import _11.asktpk.artisanconnectbackend.entities.Role;
 import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
+import _11.asktpk.artisanconnectbackend.repository.RolesRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,19 +16,27 @@ import java.util.List;
 @Service
 public class ClientService {
     private final ClientRepository clientRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final RolesRepository rolesRepository;
 
-    public ClientService(ClientRepository clientRepository) {
+    public ClientService(ClientRepository clientRepository, PasswordEncoder passwordEncoder, RolesRepository rolesRepository) {
         this.clientRepository = clientRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.rolesRepository = rolesRepository;
     }
 
     private ClientDTO toDto(Client client) {
+        if(client == null) {
+            return null;
+        }
+
         ClientDTO dto = new ClientDTO();
 
         dto.setId(client.getId());
         dto.setFirstName(client.getFirstName());
         dto.setLastName(client.getLastName());
         dto.setEmail(client.getEmail());
-        dto.setRole(client.getRole());
+        dto.setRole(client.getRole().getRole());
         dto.setImage(client.getImage());
 
         return dto;
@@ -31,15 +44,33 @@ public class ClientService {
 
     private Client fromDto(ClientDTO dto) {
         Client client = new Client();
+        Role rola;
+
+        if (clientRepository.findById(dto.getId()).isPresent()) {
+            rola = clientRepository.findById(dto.getId()).get().getRole();
+        } else {
+            rola = new Role();
+            rola.setRole("USER");
+        }
 
         client.setId(dto.getId());
         client.setFirstName(dto.getFirstName());
         client.setLastName(dto.getLastName());
         client.setEmail(dto.getEmail());
-        client.setRole(dto.getRole());
+        client.setRole(rola);
         client.setImage(dto.getImage());
 
         return client;
+    }
+
+    private Client fromDto(ClientRegistrationDTO dto) {
+           Client client = new Client();
+
+           client.setFirstName(dto.getFirstName());
+           client.setLastName(dto.getLastName());
+           client.setEmail(dto.getEmail());
+           client.setPassword(dto.getPassword());
+           return client;
     }
 
     public List<ClientDTO> getAllClients() {
@@ -51,6 +82,10 @@ public class ClientService {
         return clientRepository.findById(id).orElse(null);
     }
 
+    public ClientDTO getClientByIdDTO(Long id) {
+        return toDto(clientRepository.findById(id).orElse(null));
+    }
+
     public boolean clientExists(Long id) {
         return clientRepository.existsById(id);
     }
@@ -59,20 +94,52 @@ public class ClientService {
         return toDto(clientRepository.save(fromDto(clientDTO)));
     }
 
+    public Client saveClientToDB(Client client) {
+        return clientRepository.save(client);
+    }
+
     public ClientDTO updateClient(long id, ClientDTO clientDTO) {
         Client existingClient = clientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
+
+        Role newRole = rolesRepository.findRoleByRole(clientDTO.getRole());
 
         existingClient.setEmail(clientDTO.getEmail());
         existingClient.setFirstName(clientDTO.getFirstName());
         existingClient.setLastName(clientDTO.getLastName());
         existingClient.setImage(clientDTO.getImage());
-        existingClient.setRole(clientDTO.getRole());
+        existingClient.setRole(newRole);
 
         return toDto(clientRepository.save(existingClient));
     }
 
     public void deleteClient(Long id) {
         clientRepository.deleteById(id);
+    }
+
+    // И замените метод checkClientCredentials на:
+    public boolean checkClientCredentials(AuthRequestDTO dto) {
+        Client cl = clientRepository.findByEmail(dto.getEmail());
+        if (cl == null) {
+            return false;
+        }
+
+        return passwordEncoder.matches(dto.getPassword(), cl.getPassword());
+    }
+
+    // При создании нового пользователя не забудьте шифровать пароль:
+    public ClientDTO registerClient(ClientRegistrationDTO clientDTO) {
+        Client client = fromDto(clientDTO);
+        client.setRole(rolesRepository.findRoleById(1L));
+        client.setPassword(passwordEncoder.encode(client.getPassword()));
+        return toDto(clientRepository.save(client));
+    }
+
+    public Client getClientByEmail(String email) {
+        return clientRepository.findByEmail(email);
+    }
+
+    public Role getUserRole() {
+        return rolesRepository.findRoleByRole("USER");
     }
 }
