@@ -2,11 +2,8 @@ package _11.asktpk.artisanconnectbackend.service;
 
 import _11.asktpk.artisanconnectbackend.dto.AttributeDto;
 import _11.asktpk.artisanconnectbackend.dto.NoticeRequestDTO;
-import _11.asktpk.artisanconnectbackend.entities.AttributesNotice;
-import _11.asktpk.artisanconnectbackend.entities.Client;
-import _11.asktpk.artisanconnectbackend.entities.Notice;
-import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
-import _11.asktpk.artisanconnectbackend.repository.NoticeRepository;
+import _11.asktpk.artisanconnectbackend.entities.*;
+import _11.asktpk.artisanconnectbackend.repository.*;
 import _11.asktpk.artisanconnectbackend.dto.NoticeResponseDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.logging.log4j.LogManager;
@@ -28,11 +25,22 @@ public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final ClientRepository clientRepository;
     private final ImageService imageService;
+    private final AttributesRepository attributesRepository;
+    private final AttributeValuesRepository attributeValuesRepository;
+    private final AttributesNoticeRepository attributesNoticeRepository;
 
-    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository, ImageService imageService) {
+    public NoticeService(NoticeRepository noticeRepository,
+                         ClientRepository clientRepository,
+                         ImageService imageService,
+                         AttributesRepository attributesRepository,
+                         AttributeValuesRepository attributeValuesRepository,
+                         AttributesNoticeRepository attributesNoticeRepository) {
         this.noticeRepository = noticeRepository;
         this.clientRepository = clientRepository;
         this.imageService = imageService;
+        this.attributesRepository = attributesRepository;
+        this.attributeValuesRepository = attributeValuesRepository;
+        this.attributesNoticeRepository = attributesNoticeRepository;
     }
 
     public Notice fromDTO(NoticeRequestDTO dto) {
@@ -97,7 +105,38 @@ public class NoticeService {
     public Long addNotice(NoticeRequestDTO dto) {
         Notice notice = fromDTO(dto);
         notice.setPublishDate(LocalDateTime.now());
-        return noticeRepository.save(notice).getIdNotice();
+        Notice savedNotice = noticeRepository.save(notice);
+
+        if (dto.getAttributes() != null && !dto.getAttributes().isEmpty()) {
+            saveAttributes(savedNotice.getIdNotice(), dto.getAttributes());
+        }
+
+        return savedNotice.getIdNotice();
+    }
+
+    private void saveAttributes(Long noticeId, List<AttributeDto> attributeDtos) {
+        for (AttributeDto attributeDto : attributeDtos) {
+            Attributes attribute = attributesRepository.findByName(attributeDto.getName())
+                    .orElseGet(() -> {
+                        Attributes newAttribute = new Attributes();
+                        newAttribute.setName(attributeDto.getName());
+                        return attributesRepository.save(newAttribute);
+                    });
+
+            AttributeValues attributeValue = attributeValuesRepository
+                    .findByAttributeAndValue(attribute, attributeDto.getValue())
+                    .orElseGet(() -> {
+                        AttributeValues newValue = new AttributeValues();
+                        newValue.setAttribute(attribute);
+                        newValue.setValue(attributeDto.getValue());
+                        return attributeValuesRepository.save(newValue);
+                    });
+
+            AttributesNotice attributesNotice = new AttributesNotice();
+            attributesNotice.setNotice_id(noticeId);
+            attributesNotice.setAttributeValue(attributeValue);
+            attributesNoticeRepository.save(attributesNotice);
+        }
     }
 
     public boolean noticeExists(Long id) {
