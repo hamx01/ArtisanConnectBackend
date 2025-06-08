@@ -1,9 +1,12 @@
 package _11.asktpk.artisanconnectbackend.entities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "attribute_values")
+@Getter @Setter
 public class AttributeValues {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,6 +17,4 @@ public class AttributeValues {
     private Attributes attribute;
 
     private String value;
-
-    // Getters, setters, and constructors
 }

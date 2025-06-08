@@ -1,10 +1,13 @@
 package _11.asktpk.artisanconnectbackend.service;
 
+import _11.asktpk.artisanconnectbackend.dto.AttributeDto;
+import _11.asktpk.artisanconnectbackend.dto.NoticeRequestDTO;
+import _11.asktpk.artisanconnectbackend.entities.AttributesNotice;
 import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.entities.Notice;
 import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
 import _11.asktpk.artisanconnectbackend.repository.NoticeRepository;
-import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
+import _11.asktpk.artisanconnectbackend.dto.NoticeResponseDTO;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +17,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class NoticeService {
@@ -25,25 +27,21 @@ public class NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final ClientRepository clientRepository;
-    private final WishlistService wishlistService;
     private final ImageService imageService;
 
-    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository, WishlistService wishlistService, ImageService imageService) {
+    public NoticeService(NoticeRepository noticeRepository, ClientRepository clientRepository, ImageService imageService) {
         this.noticeRepository = noticeRepository;
         this.clientRepository = clientRepository;
-        this.wishlistService = wishlistService;
         this.imageService = imageService;
     }
 
-    public Notice fromDTO(NoticeDTO dto) {
+    public Notice fromDTO(NoticeRequestDTO dto) {
         Notice notice = new Notice();
         notice.setTitle(dto.getTitle());
         notice.setDescription(dto.getDescription());
         notice.setPrice(dto.getPrice());
         notice.setCategory(dto.getCategory());
         notice.setStatus(dto.getStatus());
-        notice.setPublishDate(dto.getPublishDate());
-        notice.setAttributesNotices(dto.getAttributesNotices());
 
         Client client = clientRepository.findById(dto.getClientId())
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono klienta o ID: " + dto.getClientId()));
@@ -52,15 +50,8 @@ public class NoticeService {
         return notice;
     }
 
-    private NoticeDTO toDTO(Notice notice) {
-        NoticeDTO dto = new NoticeDTO();
-        // TODO: To be updated using AuthService after implementing authentication.
-        Optional<Client> client = clientRepository.findById(1L);
-        boolean isWishlisted = false;
-        if (client.isPresent()) {
-            Client c = client.get();
-            isWishlisted = wishlistService.isWishlisted(c, notice);
-        }
+    private NoticeResponseDTO toDTO(Notice notice) {
+        NoticeResponseDTO dto = new NoticeResponseDTO();
         dto.setNoticeId(notice.getIdNotice());
         dto.setTitle(notice.getTitle());
         dto.setClientId(notice.getClient().getId());
@@ -69,20 +60,30 @@ public class NoticeService {
         dto.setCategory(notice.getCategory());
         dto.setStatus(notice.getStatus());
         dto.setPublishDate(notice.getPublishDate());
-        dto.setAttributesNotices(notice.getAttributesNotices());
-        dto.setWishlisted(isWishlisted);
+
+        List<AttributeDto> attributes = new ArrayList<>();
+        if (notice.getAttributesNotices() != null) {
+            for (AttributesNotice an : notice.getAttributesNotices()) {
+                AttributeDto attr = new AttributeDto();
+                attr.setName(an.getAttributeValue().getAttribute().getName());
+                attr.setValue(an.getAttributeValue().getValue());
+                attributes.add(attr);
+            }
+        }
+        dto.setAttributes(attributes);
+
         return dto;
     }
 
-    public List<NoticeDTO> getAllNotices() {
-        List<NoticeDTO> result = new ArrayList<>();
+    public List<NoticeResponseDTO> getAllNotices() {
+        List<NoticeResponseDTO> result = new ArrayList<>();
         for (Notice notice : noticeRepository.findAll()) {
             result.add(toDTO(notice));
         }
         return result;
     }
 
-    public NoticeDTO getNoticeById(Long id) {
+    public NoticeResponseDTO getNoticeById(Long id) {
         Notice notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
         return toDTO(notice);
@@ -93,15 +94,17 @@ public class NoticeService {
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
     }
 
-    public Long addNotice(NoticeDTO dto) {
-        return noticeRepository.save(fromDTO(dto)).getIdNotice();
+    public Long addNotice(NoticeRequestDTO dto) {
+        Notice notice = fromDTO(dto);
+        notice.setPublishDate(LocalDateTime.now());
+        return noticeRepository.save(notice).getIdNotice();
     }
 
     public boolean noticeExists(Long id) {
         return noticeRepository.existsById(id);
     }
 
-    public NoticeDTO updateNotice(Long id, NoticeDTO dto) {
+    public NoticeResponseDTO updateNotice(Long id, NoticeRequestDTO dto) {
         Notice existingNotice = noticeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nie znaleziono ogłoszenia o ID: " + id));
 
@@ -110,7 +113,6 @@ public class NoticeService {
         existingNotice.setPrice(dto.getPrice());
         existingNotice.setCategory(dto.getCategory());
         existingNotice.setStatus(dto.getStatus());
-        existingNotice.setAttributesNotices(dto.getAttributesNotices());
 
         if (dto.getClientId() != null && !dto.getClientId().equals(existingNotice.getClient().getId())) {
             Client client = clientRepository.findById(dto.getClientId())

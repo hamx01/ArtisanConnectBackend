@@ -1,17 +1,17 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
-import _11.asktpk.artisanconnectbackend.dto.NoticeAdditionDTO;
-import _11.asktpk.artisanconnectbackend.dto.NoticeBoostDTO;
-import _11.asktpk.artisanconnectbackend.dto.RequestResponseDTO;
+import _11.asktpk.artisanconnectbackend.dto.*;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
-import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
+import _11.asktpk.artisanconnectbackend.utils.Enums;
+import _11.asktpk.artisanconnectbackend.utils.Tools;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @RequestMapping("/api/v1/notices")
@@ -19,14 +19,16 @@ import java.util.List;
 public class NoticeController {
     private final NoticeService noticeService;
     private final ClientService clientService;
+    private final Tools tools;
 
-    public NoticeController(NoticeService noticeService, ClientService clientService) {
+    public NoticeController(NoticeService noticeService, ClientService clientService, Tools tools) {
         this.noticeService = noticeService;
         this.clientService = clientService;
+        this.tools = tools;
     }
 
     @GetMapping("/get/all")
-    public List<NoticeDTO> getAllNotices() {
+    public List<NoticeResponseDTO> getAllNotices() {
         return noticeService.getAllNotices();
     }
 
@@ -40,57 +42,34 @@ public class NoticeController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<NoticeAdditionDTO> addNotice(@RequestBody NoticeDTO dto) {
-        if (!clientService.clientExists(dto.getClientId())) {
+    public ResponseEntity<NoticeAdditionDTO> addNotice(@RequestBody NoticeRequestDTO dto, HttpServletRequest request) {
+        Long clientId = tools.getClientIdFromRequest(request);
+        if (!clientService.clientExists(clientId)) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
-                    .body(new NoticeAdditionDTO("Nie znaleziono klienta o ID: " + dto.getClientId()));
+                    .body(new NoticeAdditionDTO("Nie znaleziono klienta o ID: " + clientId));
         }
 
-        if (dto.getCategory() == null) {
+        dto.setClientId(clientId);
+
+        if (dto.getCategory() == null || !Arrays.asList(Enums.Category.values()).contains(dto.getCategory())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new NoticeAdditionDTO("Nie ma takiej kategorii"));
         }
-        dto.setPublishDate(java.time.LocalDateTime.now());
 
         Long newNoticeId = noticeService.addNotice(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new NoticeAdditionDTO(newNoticeId ,"Dodano ogłoszenie."));
     }
 
-    // TODO: zamiast dodawać tutaj pętlą, musi to robić NoticeService, trzeba zaimplementować odpowienią metodę
-    @PostMapping("/bulk_add")
-    public ResponseEntity<String> addNotices(@RequestBody List<NoticeDTO> notices_list) {
-        ResponseEntity<String> response = new ResponseEntity<>(HttpStatus.CREATED);
-        List<String> errors = new ArrayList<>();
-        boolean isError = false;
-
-        if (notices_list.isEmpty()) {
-            return response.status(HttpStatus.BAD_REQUEST).body("Lista ogłoszeń jest pusta.");
-        }
-
-        for (NoticeDTO dto : notices_list) {
-            if (!clientService.clientExists(dto.getClientId())) {
-                isError = true;
-                errors.add(dto.getClientId().toString());
-            } else {
-                if (!isError) {
-                    noticeService.addNotice(dto);
-                }
-            }
-        }
-
-        if (isError) {
-            return response.status(HttpStatus.BAD_REQUEST).body("Nie znaleziono klientów: " + errors);
-        }
-
-        return response;
-    }
-
     @PutMapping("/edit/{id}")
-    public ResponseEntity<Object> editNotice(@PathVariable("id") long id, @RequestBody NoticeDTO dto) {
+    public ResponseEntity<Object> editNotice(@PathVariable("id") long id, @RequestBody NoticeRequestDTO dto, HttpServletRequest request) {
+        Long clientIdFromToken = tools.getClientIdFromRequest(request);
         if (noticeService.noticeExists(id)) {
+            if (!noticeService.isNoticeOwnedByClient(id, clientIdFromToken)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new RequestResponseDTO("Nie masz uprawnień do edycji tego ogłoszenia."));
+            }
             try {
-                return new ResponseEntity<>(noticeService.updateNotice(id, dto), HttpStatus.OK);
+                return ResponseEntity.status(HttpStatus.OK).body(noticeService.updateNotice(id, dto));
             } catch (EntityNotFoundException e) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
             }
@@ -100,8 +79,13 @@ public class NoticeController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<RequestResponseDTO> deleteNotice(@PathVariable("id") long id) {
+    public ResponseEntity<RequestResponseDTO> deleteNotice(@PathVariable("id") long id, HttpServletRequest request) {
+        Long clientIdFromToken = tools.getClientIdFromRequest(request);
         if (noticeService.noticeExists(id)) {
+            if (!noticeService.isNoticeOwnedByClient(id, clientIdFromToken)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new RequestResponseDTO("Nie masz uprawnień do usunięcia tego ogłoszenia."));
+            }
+
             noticeService.deleteNotice(id);
             return ResponseEntity.status(HttpStatus.OK).body(new RequestResponseDTO("Pomyślnie usunięto ogłoszenie o ID: " + id));
         } else {
@@ -109,9 +93,10 @@ public class NoticeController {
         }
     }
 
-    @PostMapping("/boost/{id}")
-    public ResponseEntity<RequestResponseDTO> boostNotice(@PathVariable("id") long clientId, @RequestBody NoticeBoostDTO dto) {
-        if (!noticeService.isNoticeOwnedByClient(dto.getNoticeId(), clientId)) {
+    @PostMapping("/boost")
+    public ResponseEntity<RequestResponseDTO> boostNotice(@RequestBody NoticeBoostDTO dto, HttpServletRequest request) {
+        Long clientId = tools.getClientIdFromRequest(request);
+        if (noticeService.isNoticeOwnedByClient(dto.getNoticeId(), clientId)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new RequestResponseDTO("Ogłoszenie nie istnieje lub nie należy do zalogowanego klienta."));
         }
         noticeService.boostNotice(dto.getNoticeId());

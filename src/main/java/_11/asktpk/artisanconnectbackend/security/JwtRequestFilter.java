@@ -43,7 +43,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
                     response.setCharacterEncoding("UTF-8");
-                    String jsonResponse = "{\"error\": \"Token is invalid or expired. Please login again.\"}";
+                    String jsonResponse = "{\"error\": \"Token is invalid. Please login again.\"}";
                     response.getWriter().write(jsonResponse);
                     return;
                 }
@@ -53,7 +53,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             } catch (ExpiredJwtException expiredJwtException) {
                 logger.error(expiredJwtException.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write(new RequestResponseDTO(expiredJwtException.getMessage()).toJSON());
+                response.getWriter().write(new RequestResponseDTO("Authentication token is expired. Please login again.").toJSON());
                 return;
             } catch (Exception e) {
                 logger.error(e.getMessage());

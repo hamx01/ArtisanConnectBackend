@@ -1,18 +1,17 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
-import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
+import _11.asktpk.artisanconnectbackend.dto.NoticeResponseDTO;
 import _11.asktpk.artisanconnectbackend.dto.RequestResponseDTO;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.service.WishlistService;
+import _11.asktpk.artisanconnectbackend.utils.Tools;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
-import static _11.asktpk.artisanconnectbackend.utils.Tools.getClientIdFromRequest;
 
 @Slf4j
 @RestController
@@ -21,18 +20,20 @@ public class WishlistController {
     private final WishlistService wishlistService;
     private final ClientService clientService;
     private final NoticeService noticeService;
+    private final Tools tools;
 
-    public WishlistController(WishlistService wishlistService, ClientService clientService, NoticeService noticeService) {
+    public WishlistController(WishlistService wishlistService, ClientService clientService, NoticeService noticeService, Tools tools) {
         this.wishlistService = wishlistService;
         this.clientService = clientService;
         this.noticeService = noticeService;
+        this.tools = tools;
     }
 
     @PostMapping("/toggle/{noticeId}")
     public ResponseEntity<RequestResponseDTO> toggleWishlist(@PathVariable Long noticeId, HttpServletRequest request) {
-        Long clientId = getClientIdFromRequest(request);
-        NoticeDTO noticeDTO = noticeService.getNoticeById(noticeId);
-        if (noticeDTO == null) {
+        Long clientId = tools.getClientIdFromRequest(request);
+        NoticeResponseDTO noticeResponseDTO = noticeService.getNoticeById(noticeId);
+        if (noticeResponseDTO == null) {
             return ResponseEntity.badRequest().body(new RequestResponseDTO("Notice not found"));
         }
         boolean added = wishlistService.toggleWishlist(
@@ -54,8 +55,8 @@ public class WishlistController {
 //    }
 
     @GetMapping("/")
-    public List<NoticeDTO> getWishlistForClient(HttpServletRequest request) {
-        Long clientId = getClientIdFromRequest(request);
+    public List<NoticeResponseDTO> getWishlistForClient(HttpServletRequest request) {
+        Long clientId = tools.getClientIdFromRequest(request);
         return wishlistService.getNoticesInWishlist(clientId);
     }
 }

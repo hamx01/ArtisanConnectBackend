@@ -35,10 +35,10 @@ public class Notice {
 
     private LocalDateTime publishDate;
 
-    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "notice_id")
     private List<AttributesNotice> attributesNotices;
 
-    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "notice")
     private List<Order> orders;
 
 //    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)

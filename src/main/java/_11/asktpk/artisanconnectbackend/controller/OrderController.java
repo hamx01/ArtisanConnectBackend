@@ -5,12 +5,12 @@ import _11.asktpk.artisanconnectbackend.entities.Order;
 import _11.asktpk.artisanconnectbackend.service.OrderService;
 import _11.asktpk.artisanconnectbackend.service.PaymentService;
 import _11.asktpk.artisanconnectbackend.utils.Enums;
+import _11.asktpk.artisanconnectbackend.utils.Tools;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static _11.asktpk.artisanconnectbackend.utils.Tools.getClientIdFromRequest;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -18,15 +18,17 @@ public class OrderController {
 
     private final OrderService orderService;
     private final PaymentService paymentService;
+    private final Tools tools;
 
-    public OrderController(OrderService orderService, PaymentService paymentService) {
+    public OrderController(OrderService orderService, PaymentService paymentService, Tools tools) {
         this.orderService = orderService;
         this.paymentService = paymentService;
+        this.tools = tools;
     }
 
     @PostMapping("/add")
     public ResponseEntity<?> addClient(@RequestBody OrderDTO orderDTO, HttpServletRequest request) {
-        orderDTO.setClientId(getClientIdFromRequest(request));
+        orderDTO.setClientId(tools.getClientIdFromRequest(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.addOrder(orderDTO));
     }
 

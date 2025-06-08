@@ -1,7 +1,7 @@
 package _11.asktpk.artisanconnectbackend.service;
 
 import _11.asktpk.artisanconnectbackend.dto.WishlistDTO;
-import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
+import _11.asktpk.artisanconnectbackend.dto.NoticeResponseDTO;
 import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.entities.Notice;
 import _11.asktpk.artisanconnectbackend.entities.Wishlist;
@@ -31,12 +31,6 @@ public class WishlistService {
                 .toList();
     }
 
-    public boolean isWishlisted(Client client, Notice notice) {
-        Optional<Wishlist> existingEntry = wishlistRepository.findByClientAndNotice(client, notice);
-
-        return existingEntry.isEmpty();
-    }
-
     public boolean toggleWishlist(Client client, Notice notice) {
         Optional<Wishlist> existingEntry = wishlistRepository.findByClientAndNotice(client, notice);
 
@@ -61,7 +55,7 @@ public class WishlistService {
         return dto;
     }
 
-    public List<NoticeDTO> getNoticesInWishlist(Long clientId) {
+    public List<NoticeResponseDTO> getNoticesInWishlist(Long clientId) {
         List<Wishlist> wishlistEntries = wishlistRepository.findAllByClientId(clientId);
 
         return wishlistEntries.stream()

@@ -1,21 +1,20 @@
 package _11.asktpk.artisanconnectbackend.entities;
 
 import jakarta.persistence.*;
+import lombok.Setter;
+import lombok.Getter;
 
 @Entity
 @Table(name = "attributes_notice")
+@Getter @Setter
 public class AttributesNotice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "id_notice")
-    private Notice notice;
+    private Long notice_id;
 
     @ManyToOne
     @JoinColumn(name = "id_value")
     private AttributeValues attributeValue;
-
-    // Getters, setters, and constructors
 }
