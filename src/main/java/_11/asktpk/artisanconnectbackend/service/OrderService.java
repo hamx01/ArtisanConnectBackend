@@ -56,8 +56,7 @@ public class OrderService {
 
 
     public Long addOrder(OrderDTO orderDTO) {
-        Order order = fromDTO(orderDTO);
-        return orderRepository.save(order).getId();
+        return orderRepository.save(fromDTO(orderDTO)).getId();
     }
 
     public Long changeOrderStatus(Long id, Enums.OrderStatus status) {
