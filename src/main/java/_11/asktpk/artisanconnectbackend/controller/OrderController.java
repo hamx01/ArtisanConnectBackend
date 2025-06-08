@@ -1,7 +1,9 @@
 package _11.asktpk.artisanconnectbackend.controller;
 
 import _11.asktpk.artisanconnectbackend.dto.*;
+import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.entities.Order;
+import _11.asktpk.artisanconnectbackend.entities.Payment;
 import _11.asktpk.artisanconnectbackend.service.OrderService;
 import _11.asktpk.artisanconnectbackend.service.PaymentService;
 import _11.asktpk.artisanconnectbackend.utils.Enums;
@@ -10,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -38,21 +42,91 @@ public class OrderController {
     }
 
     @PostMapping("/token")
-    public ResponseEntity<?> fetchToken() {
-        Order order = orderService.getOrderById(1L);
+    public ResponseEntity<?> fetchToken(HttpServletRequest request,@RequestParam Long orderId) {
+        Order order = orderService.getOrderById(orderId);
+        Long clientId = tools.getClientIdFromRequest(request);
+        Client client = order.getClient();
         OAuthPaymentResponseDTO authPaymentDTO = paymentService.getOAuthToken();
         TransactionPaymentRequestDTO.Payer payer = new TransactionPaymentRequestDTO.Payer(
-                "patryk@test.pl", "Patryk Test");
+                client.getEmail(), client.getFirstName()+' '+client.getLastName());
 
         String paymentDescription = order.getOrderType() == Enums.OrderType.ACTIVATION ? "Aktywacja ogłoszenia" : "Podbicie ogłoszenia";
         paymentDescription += order.getNotice().getTitle();
-        TransactionPaymentRequestDTO request = new TransactionPaymentRequestDTO(
+        TransactionPaymentRequestDTO paymentRequest = new TransactionPaymentRequestDTO(
                 order.getAmount(), paymentDescription, payer);
 
-        String response = paymentService.createTransaction(order, authPaymentDTO.getAccess_token(), request);
+        String response = paymentService.createTransaction(order, authPaymentDTO.getAccess_token(), paymentRequest);
         System.out.println(response);
         System.out.println(request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @GetMapping("/get/all")
+    public ResponseEntity<List<OrderWithPaymentsDTO>> getOrders(HttpServletRequest request) {
+        Long clientId = tools.getClientIdFromRequest(request);
+        List<Order> orders = orderService.getOrdersByClientId(clientId);
+
+        List<OrderWithPaymentsDTO> dtoList = orders.stream().map(order -> {
+            OrderWithPaymentsDTO dto = new OrderWithPaymentsDTO();
+            dto.setOrderId(order.getId());
+            dto.setOrderType(order.getOrderType().name());
+            dto.setStatus(order.getStatus().name());
+            dto.setAmount(order.getAmount());
+            dto.setCreatedAt(order.getCreatedAt());
+
+            List<Payment> payments = paymentService.getPaymentsByOrderId(order.getId());
+
+            List<PaymentDTO> paymentDTOs = payments.stream().map(payment -> {
+                PaymentDTO pDto = new PaymentDTO();
+                pDto.setPaymentId(payment.getIdPayment());
+                pDto.setAmount(payment.getAmount());
+                pDto.setStatus(payment.getStatus().name());
+                pDto.setTransactionPaymentUrl(payment.getTransactionPaymentUrl());
+                pDto.setTransactionId(payment.getTransactionId());
+                return pDto;
+            }).toList();
+
+            dto.setPayments(paymentDTOs);
+            return dto;
+        }).toList();
+
+        return ResponseEntity.ok(dtoList);
+    }
+
+    @GetMapping("/get/{orderId}")
+    public ResponseEntity<OrderWithPaymentsDTO> getOrderById(HttpServletRequest request,
+                                                             @PathVariable Long orderId) {
+        Long clientId = tools.getClientIdFromRequest(request);
+
+        Order order = orderService.getOrderById(orderId);
+
+        if (!order.getClient().getId().equals(clientId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // lub UNAUTHORIZED
+        }
+
+        OrderWithPaymentsDTO dto = new OrderWithPaymentsDTO();
+        dto.setOrderId(order.getId());
+        dto.setOrderType(order.getOrderType().name());
+        dto.setStatus(order.getStatus().name());
+        dto.setAmount(order.getAmount());
+        dto.setCreatedAt(order.getCreatedAt());
+
+        List<Payment> payments = paymentService.getPaymentsByOrderId(order.getId());
+        List<PaymentDTO> paymentDTOs = payments.stream().map(payment -> {
+            PaymentDTO pDto = new PaymentDTO();
+            pDto.setPaymentId(payment.getIdPayment());
+            pDto.setAmount(payment.getAmount());
+            pDto.setStatus(payment.getStatus().name());
+            pDto.setTransactionPaymentUrl(payment.getTransactionPaymentUrl());
+            pDto.setTransactionId(payment.getTransactionId());
+            return pDto;
+        }).toList();
+
+        dto.setPayments(paymentDTOs);
+
+        return ResponseEntity.ok(dto);
+    }
+
+
 }
