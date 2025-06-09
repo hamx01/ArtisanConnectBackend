@@ -1,10 +1,14 @@
 package _11.asktpk.artisanconnectbackend.entities;
 
 import jakarta.persistence.*;
+import lombok.Setter;
+import lombok.Getter;
+
 import java.util.List;
 
 @Entity
 @Table(name = "attributes")
+@Getter @Setter
 public class Attributes {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,8 +16,6 @@ public class Attributes {
 
     private String name;
 
-    @OneToMany(mappedBy = "attribute", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "attribute")
     private List<AttributeValues> attributeValues;
-
-    // Getters, setters, and constructors
 }

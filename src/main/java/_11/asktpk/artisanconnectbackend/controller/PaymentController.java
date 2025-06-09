@@ -39,9 +39,6 @@ public class PaymentController {
 
     @PostMapping(value = "/notification", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<String> handleTpayNotification(@RequestParam Map<String, String> params) {
-        log.info("=== ODEBRANO NOTYFIKACJĘ Tpay ===");
-        log.info("Parametry:\n{}", paramsToLogString(params));
-
         String id = params.get("id");
         String trId = params.get("tr_id");
         String trAmount = params.get("tr_amount");
@@ -54,7 +51,6 @@ public class PaymentController {
         );
 
         if (!expectedMd5.equals(md5sum)) {
-            log.warn("❌ Błędna suma kontrolna! Otrzymano: {}, Oczekiwano: {}", md5sum, expectedMd5);
             return ResponseEntity.status(400).body("INVALID CHECKSUM");
         }
 
@@ -63,7 +59,6 @@ public class PaymentController {
             Payment payment = optionalPayment.get();
 
             if ("true".equalsIgnoreCase(trStatus) || "PAID".equalsIgnoreCase(trStatus)) {
-                log.info("✅ Transakcja opłacona: tr_id={}, kwota={}", trId, params.get("tr_paid"));
                 payment.setStatus(Enums.PaymentStatus.CORRECT);
 
                 if (payment.getOrder() != null) {
@@ -78,7 +73,6 @@ public class PaymentController {
                 }
 
             } else if ("false".equalsIgnoreCase(trStatus)) {
-                log.warn("❌ Transakcja nieudana: {}", trId);
                 payment.setStatus(Enums.PaymentStatus.INCORRECT);
 
                 if (payment.getOrder() != null) {
@@ -87,10 +81,7 @@ public class PaymentController {
             }
 
             paymentRepository.save(payment);
-        } else {
-            log.warn("⚠️ Brak płatności o tr_id={}", trId);
         }
-
         return ResponseEntity.ok("TRUE");
     }
 

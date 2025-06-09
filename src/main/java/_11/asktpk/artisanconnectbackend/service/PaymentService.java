@@ -15,6 +15,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Service
 public class PaymentService {
     private final WebClient webClient;
@@ -80,4 +82,10 @@ public class PaymentService {
 
         return null;
     }
+
+    public List<Payment> getPaymentsByOrderId(Long id) {
+        return paymentRepository.findAllByOrderId(id);
+    }
+
+
 }

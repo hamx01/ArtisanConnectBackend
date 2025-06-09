@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import _11.asktpk.artisanconnectbackend.entities.Order;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class OrderService {
@@ -56,8 +57,7 @@ public class OrderService {
 
 
     public Long addOrder(OrderDTO orderDTO) {
-        Order order = fromDTO(orderDTO);
-        return orderRepository.save(order).getId();
+        return orderRepository.save(fromDTO(orderDTO)).getId();
     }
 
     public Long changeOrderStatus(Long id, Enums.OrderStatus status) {
@@ -75,5 +75,9 @@ public class OrderService {
     public Order getOrderById(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nie znaleziono zamówienia o ID: " + id));
+    }
+
+    public List<Order> getOrdersByClientId(Long clientId) {
+        return orderRepository.findByClientId(clientId);
     }
 }
