@@ -3,6 +3,7 @@ package _11.asktpk.artisanconnectbackend.controller;
 import _11.asktpk.artisanconnectbackend.dto.*;
 import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.security.JwtUtil;
+import _11.asktpk.artisanconnectbackend.service.AuthService;
 import _11.asktpk.artisanconnectbackend.service.ClientService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -19,27 +20,32 @@ import java.util.Map;
 public class AuthController {
 
     private final ClientService clientService;
+    private final AuthService authService;
     private final JwtUtil jwtUtil;
 
-    public AuthController(ClientService clientService, JwtUtil jwtUtil) {
+    public AuthController(ClientService clientService, JwtUtil jwtUtil, AuthService authService) {
         this.clientService = clientService;
+        this.authService = authService;
         this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO authRequestDTO) {
-        if (clientService.checkClientCredentials(authRequestDTO)) {
-            Client client = clientService.getClientByEmail(authRequestDTO.getEmail());
-            Long userId = client.getId();
-            String userRole = client.getRole().getRole();
+    public ResponseEntity<?> login(@RequestBody AuthRequestDTO authRequestDTO) {
+        if (authRequestDTO.getEmail() == null || authRequestDTO.getPassword() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new RequestResponseDTO("Przekazano puste login lub hasło"));
+        }
 
-            String token = jwtUtil.generateToken(client.getEmail(), userRole, userId);
+        authRequestDTO.setEmail(authRequestDTO.getEmail().toLowerCase());
+        authRequestDTO.setPassword(authRequestDTO.getPassword());
 
-            log.info("User logged in with {}", client.getEmail());
+        try {
+            AuthResponseDTO responseDTO = authService.login(authRequestDTO.getEmail(), authRequestDTO.getPassword());
+
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new AuthResponseDTO(userId, userRole, token));
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+                    .body(responseDTO);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new RequestResponseDTO(e.getMessage()));
         }
     }
 
