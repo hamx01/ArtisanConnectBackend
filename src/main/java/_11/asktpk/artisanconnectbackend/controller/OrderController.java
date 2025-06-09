@@ -44,7 +44,6 @@ public class OrderController {
     @PostMapping("/token")
     public ResponseEntity<?> fetchToken(HttpServletRequest request,@RequestParam Long orderId) {
         Order order = orderService.getOrderById(orderId);
-        Long clientId = tools.getClientIdFromRequest(request);
         Client client = order.getClient();
         OAuthPaymentResponseDTO authPaymentDTO = paymentService.getOAuthToken();
         TransactionPaymentRequestDTO.Payer payer = new TransactionPaymentRequestDTO.Payer(
@@ -56,8 +55,6 @@ public class OrderController {
                 order.getAmount(), paymentDescription, payer);
 
         String response = paymentService.createTransaction(order, authPaymentDTO.getAccess_token(), paymentRequest);
-        System.out.println(response);
-        System.out.println(request);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -102,7 +99,7 @@ public class OrderController {
         Order order = orderService.getOrderById(orderId);
 
         if (!order.getClient().getId().equals(clientId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // lub UNAUTHORIZED
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         OrderWithPaymentsDTO dto = new OrderWithPaymentsDTO();
