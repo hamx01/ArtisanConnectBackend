@@ -7,7 +7,6 @@ import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
 import _11.asktpk.artisanconnectbackend.entities.Client;
 import _11.asktpk.artisanconnectbackend.security.JwtUtil;
 import org.springframework.http.*;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +22,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    public AuthService(ClientService clientService, JwtUtil jwtUtil) {
+    public AuthService(ClientService clientService, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
         this.clientService = clientService;
         this.jwtUtil = jwtUtil;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
     }
 
     public AuthResponseDTO login(String email, String password) throws Exception {

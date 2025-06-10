@@ -7,7 +7,6 @@ import _11.asktpk.artisanconnectbackend.entities.Role;
 import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
 import _11.asktpk.artisanconnectbackend.repository.RolesRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,12 +14,10 @@ import java.util.List;
 @Service
 public class ClientService {
     private final ClientRepository clientRepository;
-    private final PasswordEncoder passwordEncoder;
     private final RolesRepository rolesRepository;
 
-    public ClientService(ClientRepository clientRepository, PasswordEncoder passwordEncoder, RolesRepository rolesRepository) {
+    public ClientService(ClientRepository clientRepository, RolesRepository rolesRepository) {
         this.clientRepository = clientRepository;
-        this.passwordEncoder = passwordEncoder;
         this.rolesRepository = rolesRepository;
     }
 
@@ -126,7 +123,6 @@ public class ClientService {
 
     public ClientDTO registerClient(Client client) {
         client.setRole(getUserRole()); // ID 1 - USER role
-        client.setPassword(passwordEncoder.encode(client.getPassword()));
         return toDto(clientRepository.save(client));
     }
 }
