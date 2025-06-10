@@ -24,7 +24,7 @@ public class ClientService {
         this.rolesRepository = rolesRepository;
     }
 
-    private ClientDTO toDto(Client client) {
+    public ClientDTO toDto(Client client) {
         if(client == null) {
             return null;
         }
@@ -41,7 +41,7 @@ public class ClientService {
         return dto;
     }
 
-    private Client fromDto(ClientDTO dto) {
+    public Client fromDto(ClientDTO dto) {
         Client client = new Client();
         Role rola;
 
@@ -124,9 +124,8 @@ public class ClientService {
         clientRepository.deleteById(id);
     }
 
-    public ClientDTO registerClient(ClientRegistrationDTO clientDTO) {
-        Client client = fromDto(clientDTO);
-        client.setRole(rolesRepository.findRoleById(1L));
+    public ClientDTO registerClient(Client client) {
+        client.setRole(getUserRole()); // ID 1 - USER role
         client.setPassword(passwordEncoder.encode(client.getPassword()));
         return toDto(clientRepository.save(client));
     }
