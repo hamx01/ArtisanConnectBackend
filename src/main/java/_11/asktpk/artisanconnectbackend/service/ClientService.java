@@ -1,6 +1,5 @@
 package _11.asktpk.artisanconnectbackend.service;
 
-import _11.asktpk.artisanconnectbackend.dto.AuthRequestDTO;
 import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
 import _11.asktpk.artisanconnectbackend.dto.ClientRegistrationDTO;
 import _11.asktpk.artisanconnectbackend.entities.Client;
@@ -25,7 +24,7 @@ public class ClientService {
         this.rolesRepository = rolesRepository;
     }
 
-    private ClientDTO toDto(Client client) {
+    public ClientDTO toDto(Client client) {
         if(client == null) {
             return null;
         }
@@ -42,7 +41,7 @@ public class ClientService {
         return dto;
     }
 
-    private Client fromDto(ClientDTO dto) {
+    public Client fromDto(ClientDTO dto) {
         Client client = new Client();
         Role rola;
 
@@ -86,6 +85,14 @@ public class ClientService {
         return toDto(clientRepository.findById(id).orElse(null));
     }
 
+    public Client getClientByEmail(String email) {
+        return clientRepository.findByEmail(email);
+    }
+
+    public Role getUserRole() {
+        return rolesRepository.findRoleByRole("USER");
+    }
+
     public boolean clientExists(Long id) {
         return clientRepository.existsById(id);
     }
@@ -117,29 +124,9 @@ public class ClientService {
         clientRepository.deleteById(id);
     }
 
-    // И замените метод checkClientCredentials на:
-    public boolean checkClientCredentials(AuthRequestDTO dto) {
-        Client cl = clientRepository.findByEmail(dto.getEmail());
-        if (cl == null) {
-            return false;
-        }
-
-        return passwordEncoder.matches(dto.getPassword(), cl.getPassword());
-    }
-
-    // При создании нового пользователя не забудьте шифровать пароль:
-    public ClientDTO registerClient(ClientRegistrationDTO clientDTO) {
-        Client client = fromDto(clientDTO);
-        client.setRole(rolesRepository.findRoleById(1L));
+    public ClientDTO registerClient(Client client) {
+        client.setRole(getUserRole()); // ID 1 - USER role
         client.setPassword(passwordEncoder.encode(client.getPassword()));
         return toDto(clientRepository.save(client));
-    }
-
-    public Client getClientByEmail(String email) {
-        return clientRepository.findByEmail(email);
-    }
-
-    public Role getUserRole() {
-        return rolesRepository.findRoleByRole("USER");
     }
 }
