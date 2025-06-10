@@ -15,10 +15,10 @@ public class EmailService {
 
     public void sendEmail(EmailDTO email) {
         SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("noreply@zikor.pl");
         message.setTo(email.getTo());
         message.setSubject(email.getSubject());
         message.setText(email.getBody());
-        message.setFrom("patryk.kania001@gmail.com");
         mailSender.send(message);
     }
 }
