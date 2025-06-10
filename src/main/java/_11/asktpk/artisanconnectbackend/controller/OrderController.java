@@ -42,7 +42,7 @@ public class OrderController {
     }
 
     @PostMapping("/token")
-    public ResponseEntity<?> fetchToken(HttpServletRequest request,@RequestParam Long orderId) {
+    public ResponseEntity<?> fetchToken(@RequestParam Long orderId) {
         Order order = orderService.getOrderById(orderId);
         Client client = order.getClient();
         OAuthPaymentResponseDTO authPaymentDTO = paymentService.getOAuthToken();
@@ -51,8 +51,15 @@ public class OrderController {
 
         String paymentDescription = order.getOrderType() == Enums.OrderType.ACTIVATION ? "Aktywacja ogłoszenia" : "Podbicie ogłoszenia";
         paymentDescription += order.getNotice().getTitle();
+
+        TransactionPaymentRequestDTO.Callbacks callbacks = new TransactionPaymentRequestDTO.Callbacks();
+        TransactionPaymentRequestDTO.PayerUrls payerUrls = new TransactionPaymentRequestDTO.PayerUrls();
+        payerUrls.setSuccess("com.hamx.artisanconnect://dashboard/userNotices");
+        payerUrls.setError("com.hamx.artisanconnect://dashboard/userNotices");
+        callbacks.setPayerUrls(payerUrls);
+
         TransactionPaymentRequestDTO paymentRequest = new TransactionPaymentRequestDTO(
-                order.getAmount(), paymentDescription, payer);
+                order.getAmount(), paymentDescription, payer, callbacks);
 
         String response = paymentService.createTransaction(order, authPaymentDTO.getAccess_token(), paymentRequest);
 
