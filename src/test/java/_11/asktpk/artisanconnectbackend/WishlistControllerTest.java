@@ -11,6 +11,7 @@ import _11.asktpk.artisanconnectbackend.service.WishlistService;
 import _11.asktpk.artisanconnectbackend.utils.Tools;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -50,11 +51,15 @@ class WishlistControllerTest {
 
     @BeforeEach
     void setUp() {
+        System.out.println("[Konfiguracja] Przygotowanie środowiska testowego...");
         when(tools.getClientIdFromRequest(request)).thenReturn(testClientId);
     }
 
     @Test
+    @DisplayName("Dodanie/Usunięcie z wishlisty - powinno zwrócić sukces gdy ogłoszenie istnieje")
     void toggleWishlist_shouldReturnSuccessWhenNoticeExists() {
+        System.out.println("Rozpoczęcie testu toggleWishlist_shouldReturnSuccessWhenNoticeExists");
+
         NoticeResponseDTO noticeResponse = new NoticeResponseDTO();
         noticeResponse.setNoticeId(testNoticeId);
 
@@ -65,24 +70,34 @@ class WishlistControllerTest {
 
         ResponseEntity<RequestResponseDTO> response = wishlistController.toggleWishlist(testNoticeId, request);
 
-        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
         assertEquals("Wishlist entry added", response.getBody().getMessage());
+
+        System.out.println("Test zakończony powodzeniem: Poprawnie obsłużono dodanie/usunięcie z wishlisty");
     }
 
     @Test
+    @DisplayName("Dodanie/Usunięcie z wishlisty - powinno zwrócić błąd gdy ogłoszenie nie istnieje")
     void toggleWishlist_shouldReturnBadRequestWhenNoticeNotFound() {
+        System.out.println("Rozpoczęcie testu toggleWishlist_shouldReturnBadRequestWhenNoticeNotFound");
+
         when(noticeService.getNoticeById(testNoticeId)).thenReturn(null);
 
         ResponseEntity<RequestResponseDTO> response = wishlistController.toggleWishlist(testNoticeId, request);
 
-        assertEquals(400, response.getStatusCodeValue());
+        assertEquals(400, response.getStatusCode().value());
         assertNotNull(response.getBody());
         assertEquals("Notice not found", response.getBody().getMessage());
+
+        System.out.println("Test zakończony powodzeniem: Poprawnie obsłużono brak ogłoszenia");
     }
 
     @Test
+    @DisplayName("Pobieranie wishlisty - powinno zwrócić listę ogłoszeń")
     void getWishlistForClient_shouldReturnNoticeList() {
+        System.out.println("Rozpoczęcie testu getWishlistForClient_shouldReturnNoticeList");
+
         NoticeResponseDTO noticeResponse = new NoticeResponseDTO();
         noticeResponse.setNoticeId(testNoticeId);
 
@@ -93,15 +108,22 @@ class WishlistControllerTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(testNoticeId, result.getFirst().getNoticeId());
+
+        System.out.println("Test zakończony powodzeniem: Poprawnie pobrano listę ogłoszeń");
     }
 
     @Test
+    @DisplayName("Pobieranie wishlisty - powinno zwrócić pustą listę gdy brak wpisów")
     void getWishlistForClient_shouldReturnEmptyListWhenNoEntries() {
+        System.out.println("Rozpoczęcie testu getWishlistForClient_shouldReturnEmptyListWhenNoEntries");
+
         when(wishlistService.getNoticesInWishlist(testClientId)).thenReturn(Collections.emptyList());
 
         List<NoticeResponseDTO> result = wishlistController.getWishlistForClient(request);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+
+        System.out.println("Test zakończony powodzeniem: Poprawnie zwrócono pustą wishlistę");
     }
 }

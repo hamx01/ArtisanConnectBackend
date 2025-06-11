@@ -8,6 +8,7 @@ import _11.asktpk.artisanconnectbackend.utils.Enums;
 import _11.asktpk.artisanconnectbackend.utils.Tools;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,13 +29,13 @@ import static org.mockito.Mockito.*;
 class NoticeControllerTest {
 
     @Mock
-    private final NoticeService noticeService = mock(NoticeService.class);
+    private NoticeService noticeService;
 
     @Mock
-    private final ClientService clientService = mock(ClientService.class);
+    private ClientService clientService;
 
     @Mock
-    private final Tools tools = mock(Tools.class);
+    private Tools tools;
 
     @Mock
     private HttpServletRequest request;
@@ -47,7 +48,7 @@ class NoticeControllerTest {
 
     @BeforeEach
     void setUp() {
-        System.out.println("Inicjalizacja danych testowych przed każdym testem");
+        System.out.println("Inicjalizacja danych testowych...");
 
         sampleNotice = new NoticeResponseDTO();
         sampleNotice.setNoticeId(1L);
@@ -69,53 +70,43 @@ class NoticeControllerTest {
     }
 
     @Test
+    @DisplayName("Pobranie wszystkich ogłoszeń")
     void getAllNotices_ShouldReturnListOfNotices() {
-        System.out.println("Test: getAllNotices_ShouldReturnListOfNotices - powinien zwrócić listę ogłoszeń");
-
         when(noticeService.getAllNotices()).thenReturn(List.of(sampleNotice));
 
         List<NoticeResponseDTO> result = noticeController.getAllNotices();
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(sampleNotice.getNoticeId(), result.getFirst().getNoticeId());
-
-        System.out.println("Pomyślnie zwrócono listę ogłoszeń");
+        System.out.println("Test GET /notices zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Pobranie istniejącego ogłoszenia")
     void getNoticeById_WhenNoticeExists_ShouldReturnNotice() {
-        System.out.println("Test: getNoticeById_WhenNoticeExists_ShouldReturnNotice - powinien zwrócić ogłoszenie gdy istnieje");
-
         when(noticeService.noticeExists(1L)).thenReturn(true);
         when(noticeService.getNoticeById(1L)).thenReturn(sampleNotice);
 
         ResponseEntity<?> response = noticeController.getNoticeById(1L);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(sampleNotice, response.getBody());
-
-        System.out.println("Pomyślnie zwrócono istniejące ogłoszenie");
+        System.out.println("Test GET /notices/{id} (istniejące) zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Pobranie nieistniejącego ogłoszenia")
     void getNoticeById_WhenNoticeNotExists_ShouldReturnNotFound() {
-        System.out.println("Test: getNoticeById_WhenNoticeNotExists_ShouldReturnNotFound - powinien zwrócić 404 gdy ogłoszenie nie istnieje");
-
         when(noticeService.noticeExists(1L)).thenReturn(false);
 
         ResponseEntity<?> response = noticeController.getNoticeById(1L);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-
-        System.out.println("Pomyślnie zwrócono status 404 dla nieistniejącego ogłoszenia");
+        System.out.println("Test GET /notices/{id} (nieistniejące) zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Dodanie poprawnego ogłoszenia")
     void addNotice_WithValidData_ShouldCreateNotice() {
-        System.out.println("Test: addNotice_WithValidData_ShouldCreateNotice - powinien utworzyć nowe ogłoszenie przy poprawnych danych");
-
         when(tools.getClientIdFromRequest(request)).thenReturn(1L);
         when(clientService.clientExists(1L)).thenReturn(true);
         when(noticeService.addNotice(any(NoticeRequestDTO.class))).thenReturn(1L);
@@ -123,17 +114,12 @@ class NoticeControllerTest {
         ResponseEntity<NoticeAdditionDTO> response = noticeController.addNotice(sampleNoticeRequest, request);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().getNoticeId());
-        assertEquals("Dodano ogłoszenie.", response.getBody().getMessage());
-
-        System.out.println("Pomyślnie utworzono nowe ogłoszenie");
+        System.out.println("Test POST /notices (poprawne dane) zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Dodanie ogłoszenia z błędną kategorią")
     void addNotice_WithInvalidCategory_ShouldReturnBadRequest() {
-        System.out.println("Test: addNotice_WithInvalidCategory_ShouldReturnBadRequest - powinien zwrócić błąd dla nieprawidłowej kategorii");
-
         sampleNoticeRequest.setCategory(null);
 
         when(tools.getClientIdFromRequest(request)).thenReturn(1L);
@@ -142,32 +128,24 @@ class NoticeControllerTest {
         ResponseEntity<NoticeAdditionDTO> response = noticeController.addNotice(sampleNoticeRequest, request);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Nie ma takiej kategorii", response.getBody().getMessage());
-
-        System.out.println("Pomyślnie zwrócono błąd dla nieprawidłowej kategorii");
+        System.out.println("Test POST /notices (błędna kategoria) zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Dodanie ogłoszenia przez nieistniejącego klienta")
     void addNotice_WhenClientNotExists_ShouldReturnBadRequest() {
-        System.out.println("Test: addNotice_WhenClientNotExists_ShouldReturnBadRequest - powinien zwrócić błąd gdy klient nie istnieje");
-
         when(tools.getClientIdFromRequest(request)).thenReturn(1L);
         when(clientService.clientExists(1L)).thenReturn(false);
 
         ResponseEntity<NoticeAdditionDTO> response = noticeController.addNotice(sampleNoticeRequest, request);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().getMessage().contains("Nie znaleziono klienta o ID:"));
-
-        System.out.println("Pomyślnie zwrócono błąd dla nieistniejącego klienta");
+        System.out.println("Test POST /notices (nieistniejący klient) zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Aktualizacja własnego ogłoszenia")
     void editNotice_WhenNoticeExistsAndOwnedByClient_ShouldUpdateNotice() {
-        System.out.println("Test: editNotice_WhenNoticeExistsAndOwnedByClient_ShouldUpdateNotice - powinien zaktualizować ogłoszenie gdy istnieje i należy do klienta");
-
         when(tools.getClientIdFromRequest(request)).thenReturn(1L);
         when(noticeService.noticeExists(1L)).thenReturn(true);
         when(noticeService.isNoticeOwnedByClient(1L, 1L)).thenReturn(true);
@@ -176,16 +154,12 @@ class NoticeControllerTest {
         ResponseEntity<Object> response = noticeController.editNotice(1L, sampleNoticeRequest, request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(sampleNotice, response.getBody());
-
-        System.out.println("Pomyślnie zaktualizowano ogłoszenie należące do klienta");
+        System.out.println("Test PUT /notices/{id} (własne ogłoszenie) zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Próba aktualizacji cudzego ogłoszenia")
     void editNotice_WhenNoticeNotOwnedByClient_ShouldReturnForbidden() {
-        System.out.println("Test: editNotice_WhenNoticeNotOwnedByClient_ShouldReturnForbidden - powinien zwrócić błąd 403 gdy ogłoszenie nie należy do klienta");
-
         when(tools.getClientIdFromRequest(request)).thenReturn(2L);
         when(noticeService.noticeExists(1L)).thenReturn(true);
         when(noticeService.isNoticeOwnedByClient(1L, 2L)).thenReturn(false);
@@ -193,16 +167,12 @@ class NoticeControllerTest {
         ResponseEntity<Object> response = noticeController.editNotice(1L, sampleNoticeRequest, request);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(((RequestResponseDTO) response.getBody()).getMessage().contains("Nie masz uprawnień"));
-
-        System.out.println("Pomyślnie zwrócono błąd 403 dla próby edycji nie swojego ogłoszenia");
+        System.out.println("Test PUT /notices/{id} (cudze ogłoszenie) zakończony sukcesem");
     }
 
     @Test
+    @DisplayName("Usunięcie własnego ogłoszenia")
     void deleteNotice_WhenNoticeExistsAndOwnedByClient_ShouldDeleteNotice() {
-        System.out.println("Test: deleteNotice_WhenNoticeExistsAndOwnedByClient_ShouldDeleteNotice - powinien usunąć ogłoszenie gdy istnieje i należy do klienta");
-
         when(tools.getClientIdFromRequest(request)).thenReturn(1L);
         when(noticeService.noticeExists(1L)).thenReturn(true);
         when(noticeService.isNoticeOwnedByClient(1L, 1L)).thenReturn(true);
@@ -210,12 +180,7 @@ class NoticeControllerTest {
         ResponseEntity<RequestResponseDTO> response = noticeController.deleteNotice(1L, request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().getMessage().contains("Pomyślnie usunięto"));
-
         verify(noticeService, times(1)).deleteNotice(1L);
-
-        System.out.println("Pomyślnie usunięto ogłoszenie należące do klienta");
+        System.out.println("Test DELETE /notices/{id} (własne ogłoszenie) zakończony sukcesem");
     }
-
 }

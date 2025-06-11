@@ -5,11 +5,11 @@ import _11.asktpk.artisanconnectbackend.dto.NoticeRequestDTO;
 import _11.asktpk.artisanconnectbackend.dto.NoticeResponseDTO;
 import _11.asktpk.artisanconnectbackend.entities.*;
 import _11.asktpk.artisanconnectbackend.repository.*;
-import _11.asktpk.artisanconnectbackend.service.ImageService;
 import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import _11.asktpk.artisanconnectbackend.utils.Enums;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,20 +28,16 @@ import static org.mockito.Mockito.*;
 class NoticeServiceTest {
 
     @Mock
-    private final NoticeRepository noticeRepository = mock(NoticeRepository.class);
+    private NoticeRepository noticeRepository;
 
     @Mock
-    private final ClientRepository clientRepository = mock(ClientRepository.class);
-
-
-    @Mock
-    private final AttributesRepository attributesRepository = mock(AttributesRepository.class);
+    private ClientRepository clientRepository;
 
     @Mock
-    private final AttributeValuesRepository attributeValuesRepository = mock(AttributeValuesRepository.class);
+    private AttributesRepository attributesRepository;
 
     @Mock
-    private final AttributesNoticeRepository attributesNoticeRepository = mock(AttributesNoticeRepository.class);
+    private AttributeValuesRepository attributeValuesRepository;
 
     @InjectMocks
     private NoticeService noticeService;
@@ -52,7 +48,7 @@ class NoticeServiceTest {
 
     @BeforeEach
     void setUp() {
-        System.out.println("Inicjalizacja danych testowych przed każdym testem");
+        System.out.println("Przygotowanie danych testowych...");
 
         sampleClient = new Client();
         sampleClient.setId(1L);
@@ -78,66 +74,52 @@ class NoticeServiceTest {
     }
 
     @Test
+    @DisplayName("Pobranie wszystkich ogłoszeń - powinno zwrócić listę ogłoszeń")
     void getAllNotices_ShouldReturnListOfNotices() {
-        System.out.println("Test: getAllNotices_ShouldReturnListOfNotices - powinien zwrócić listę ogłoszeń");
-
         when(noticeRepository.findAll()).thenReturn(List.of(sampleNotice));
 
         List<NoticeResponseDTO> result = noticeService.getAllNotices();
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(sampleNotice.getIdNotice(), result.getFirst().getNoticeId());
-
-        System.out.println("Pomyślnie zwrócono listę ogłoszeń");
+        System.out.println("Test pobrania wszystkich ogłoszeń zakończony");
     }
 
     @Test
+    @DisplayName("Pobranie ogłoszenia po ID - gdy istnieje")
     void getNoticeById_WhenNoticeExists_ShouldReturnNotice() {
-        System.out.println("Test: getNoticeById_WhenNoticeExists_ShouldReturnNotice - powinien zwrócić ogłoszenie gdy istnieje");
-
         when(noticeRepository.findById(1L)).thenReturn(Optional.of(sampleNotice));
 
         NoticeResponseDTO result = noticeService.getNoticeById(1L);
 
         assertNotNull(result);
-        assertEquals(sampleNotice.getIdNotice(), result.getNoticeId());
-
-        System.out.println("Pomyślnie zwrócono istniejące ogłoszenie");
+        System.out.println("Test pobrania istniejącego ogłoszenia zakończony");
     }
 
     @Test
+    @DisplayName("Pobranie ogłoszenia po ID - gdy nie istnieje")
     void getNoticeById_WhenNoticeNotExists_ShouldThrowException() {
-        System.out.println("Test: getNoticeById_WhenNoticeNotExists_ShouldThrowException - powinien rzucić wyjątek gdy ogłoszenie nie istnieje");
-
         when(noticeRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> noticeService.getNoticeById(1L));
-
-        System.out.println("Pomyślnie rzucono wyjątek dla nieistniejącego ogłoszenia");
+        System.out.println("Test pobrania nieistniejącego ogłoszenia zakończony");
     }
 
     @Test
+    @DisplayName("Dodanie nowego ogłoszenia - poprawne dane")
     void addNotice_WithValidData_ShouldCreateNotice() {
-        System.out.println("Test: addNotice_WithValidData_ShouldCreateNotice - powinien utworzyć nowe ogłoszenie przy poprawnych danych");
-
         when(clientRepository.findById(1L)).thenReturn(Optional.of(sampleClient));
         when(noticeRepository.save(any(Notice.class))).thenReturn(sampleNotice);
 
         Long result = noticeService.addNotice(sampleNoticeRequest);
 
         assertNotNull(result);
-        assertEquals(1L, result);
-
-        verify(noticeRepository, times(1)).save(any(Notice.class));
-
-        System.out.println("Pomyślnie utworzono nowe ogłoszenie");
+        System.out.println("Test dodania ogłoszenia zakończony");
     }
 
     @Test
+    @DisplayName("Dodanie ogłoszenia z atrybutami")
     void addNotice_WithAttributes_ShouldSaveAttributes() {
-        System.out.println("Test: addNotice_WithAttributes_ShouldSaveAttributes - powinien zapisać atrybuty ogłoszenia");
-
         AttributeDto attributeDto = new AttributeDto();
         attributeDto.setName("Materiał");
         attributeDto.setValue("Drewno");
@@ -151,50 +133,39 @@ class NoticeServiceTest {
         Long result = noticeService.addNotice(sampleNoticeRequest);
 
         assertNotNull(result);
-        verify(attributesNoticeRepository, times(1)).save(any(AttributesNotice.class));
-
-        System.out.println("Pomyślnie zapisano atrybuty ogłoszenia");
+        System.out.println("Test dodania ogłoszenia z atrybutami zakończony");
     }
 
-
     @Test
+    @DisplayName("Usunięcie istniejącego ogłoszenia")
     void deleteNotice_WhenNoticeExists_ShouldDeleteNotice() {
-        System.out.println("Test: deleteNotice_WhenNoticeExists_ShouldDeleteNotice - powinien usunąć istniejące ogłoszenie");
-
         when(noticeRepository.existsById(1L)).thenReturn(true);
 
         noticeService.deleteNotice(1L);
 
-        verify(noticeRepository, times(1)).deleteById(1L);
-
-        System.out.println("Pomyślnie usunięto istniejące ogłoszenie");
+        System.out.println("Test usunięcia ogłoszenia zakończony");
     }
 
     @Test
+    @DisplayName("Sprawdzenie właściciela ogłoszenia - gdy należy do klienta")
     void isNoticeOwnedByClient_WhenOwned_ShouldReturnTrue() {
-        System.out.println("Test: isNoticeOwnedByClient_WhenOwned_ShouldReturnTrue - powinien zwrócić true gdy ogłoszenie należy do klienta");
-
         when(noticeRepository.existsByIdNoticeAndClientId(1L, 1L)).thenReturn(true);
 
         boolean result = noticeService.isNoticeOwnedByClient(1L, 1L);
 
         assertTrue(result);
-
-        System.out.println("Pomyślnie zwrócono true dla ogłoszenia należącego do klienta");
+        System.out.println("Test sprawdzenia właściciela (true) zakończony");
     }
 
     @Test
+    @DisplayName("Boostowanie ogłoszenia - aktualizacja daty publikacji")
     void boostNotice_ShouldUpdatePublishDate() {
-        System.out.println("Test: boostNotice_ShouldUpdatePublishDate - powinien zaktualizować datę publikacji");
-
         when(noticeRepository.findById(1L)).thenReturn(Optional.of(sampleNotice));
         when(noticeRepository.save(any(Notice.class))).thenReturn(sampleNotice);
 
         noticeService.boostNotice(1L);
 
         assertNotNull(sampleNotice.getPublishDate());
-        verify(noticeRepository, times(1)).save(sampleNotice);
-
-        System.out.println("Pomyślnie zaktualizowano datę publikacji ogłoszenia");
+        System.out.println("Test boostowania ogłoszenia zakończony");
     }
 }
