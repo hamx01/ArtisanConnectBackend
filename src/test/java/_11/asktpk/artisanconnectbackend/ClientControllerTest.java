@@ -58,7 +58,7 @@ class ClientControllerTest {
 
         List<ClientDTO> clients = Collections.singletonList(sampleClientDTO);
         when(clientService.getAllClients()).thenReturn(clients);
-        System.out.println("Konfiguracja mocka: clientService.getAllClients() will return " + clients);
+        System.out.println("Konfiguracja mocka: clientService.getAllClients() zwróci " + clients);
 
         mockMvc.perform(get("/api/v1/clients/get/all"))
                 .andExpect(status().isOk())
@@ -66,7 +66,7 @@ class ClientControllerTest {
                 .andExpect(jsonPath("$[0].email").value("test@example.com"));
 
         verify(clientService, times(1)).getAllClients();
-        System.out.println("Test zaliczony: Successfully retrieved list of clients");
+        System.out.println("Test zaliczony: Pomyślnie pobrano listę klientów");
     }
 
     @Test
@@ -76,7 +76,7 @@ class ClientControllerTest {
 
         when(clientService.clientExists(anyLong())).thenReturn(false);
         when(clientService.addClient(any(ClientDTO.class))).thenReturn(sampleClientDTO);
-        System.out.println("Konfiguracja mocka: clientService.addClient() will return " + sampleClientDTO);
+        System.out.println("Konfiguracja mocka: clientService.addClient() zwróci " + sampleClientDTO);
 
         mockMvc.perform(post("/api/v1/clients/add")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -85,7 +85,7 @@ class ClientControllerTest {
                 .andExpect(jsonPath("$.id").value(1L));
 
         verify(clientService, times(1)).addClient(any(ClientDTO.class));
-        System.out.println("Test zaliczony: Successfully created new client");
+        System.out.println("Test zaliczony: Pomyślnie utworzono nowego klienta");
     }
 
     @Test
@@ -94,7 +94,7 @@ class ClientControllerTest {
         System.out.println("Uruchamianie testu: addClient_WhenClientExists_ShouldReturnConflict");
 
         when(clientService.clientExists(anyLong())).thenReturn(true);
-        System.out.println("Konfiguracja mocka: clientService.clientExists() will return true");
+        System.out.println("Konfiguracja mocka: clientService.clientExists() zwróci true");
 
         mockMvc.perform(post("/api/v1/clients/add")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -102,7 +102,7 @@ class ClientControllerTest {
                 .andExpect(status().isConflict());
 
         verify(clientService, times(0)).addClient(any(ClientDTO.class));
-        System.out.println("Test zaliczony: Correctly returned 409 for existing client");
+        System.out.println("Test zaliczony: Poprawnie zwrócono 409 dla istniejącego klienta");
     }
 
     @Test
@@ -112,7 +112,7 @@ class ClientControllerTest {
 
         when(clientService.clientExists(1L)).thenReturn(true);
         when(clientService.updateClient(anyLong(), any(ClientDTO.class))).thenReturn(sampleClientDTO);
-        System.out.println("Konfiguracja mocka: clientService.updateClient() will return " + sampleClientDTO);
+        System.out.println("Konfiguracja mocka: clientService.updateClient() zwróci " + sampleClientDTO);
 
         mockMvc.perform(put("/api/v1/clients/edit/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -121,7 +121,7 @@ class ClientControllerTest {
                 .andExpect(jsonPath("$.id").value(1L));
 
         verify(clientService, times(1)).updateClient(anyLong(), any(ClientDTO.class));
-        System.out.println("Test zaliczony: Successfully updated client");
+        System.out.println("Test zaliczony: Pomyślnie zaktualizowano klienta");
     }
 
     @Test
@@ -130,7 +130,7 @@ class ClientControllerTest {
         System.out.println("Uruchamianie testu: updateClient_WhenClientNotExists_ShouldReturnNotFound");
 
         when(clientService.clientExists(1L)).thenReturn(false);
-        System.out.println("Konfiguracja mocka: clientService.clientExists(1L) will return false");
+        System.out.println("Konfiguracja mocka: clientService.clientExists(1L) zwróci false");
 
         mockMvc.perform(put("/api/v1/clients/edit/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -138,7 +138,7 @@ class ClientControllerTest {
                 .andExpect(status().isNotFound());
 
         verify(clientService, times(0)).updateClient(anyLong(), any(ClientDTO.class));
-        System.out.println("Test zaliczony: Correctly returned 404 for non-existent client");
+        System.out.println("Test zaliczony: Poprawnie zwrócono 404 dla nieistniejącego klienta");
     }
 
     @Test
@@ -148,13 +148,13 @@ class ClientControllerTest {
 
         when(clientService.clientExists(1L)).thenReturn(true);
         doNothing().when(clientService).deleteClient(1L);
-        System.out.println("Konfiguracja mocka: clientService.deleteClient(1L) will do nothing");
+        System.out.println("Konfiguracja mocka: clientService.deleteClient(1L) nie zrobi nic");
 
         mockMvc.perform(delete("/api/v1/clients/delete/1"))
                 .andExpect(status().isOk());
 
         verify(clientService, times(1)).deleteClient(1L);
-        System.out.println("Test zaliczony: Successfully deleted client");
+        System.out.println("Test zaliczony: Pomyślnie usunięto klienta");
     }
 
     @Test
@@ -163,12 +163,12 @@ class ClientControllerTest {
         System.out.println("Uruchamianie testu: deleteClient_WhenClientNotExists_ShouldReturnNotFound");
 
         when(clientService.clientExists(1L)).thenReturn(false);
-        System.out.println("Konfiguracja mocka: clientService.clientExists(1L) will return false");
+        System.out.println("Konfiguracja mocka: clientService.clientExists(1L) zwróci false");
 
         mockMvc.perform(delete("/api/v1/clients/delete/1"))
                 .andExpect(status().isNotFound());
 
         verify(clientService, times(0)).deleteClient(anyLong());
-        System.out.println("Test zaliczony: Correctly returned 404 for non-existent client");
+        System.out.println("Test zaliczony: Poprawnie zwrócono 404 dla nieistniejącego klienta");
     }
 }
