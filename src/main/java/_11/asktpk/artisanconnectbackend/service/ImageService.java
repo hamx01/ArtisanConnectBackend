@@ -40,10 +40,11 @@ public class ImageService {
         return uniqueFileName;
     }
 
-    public void addImageNameToDB(String filename, Long noticeId) {
+    public void addImageNameToDB(String filename, Long noticeId, boolean isMainImage) {
         Image image = new Image();
         image.setImageName(filename);
         image.setNoticeId(noticeId);
+        image.setMainImage(isMainImage);
         imageRepository.save(image);
     }
 

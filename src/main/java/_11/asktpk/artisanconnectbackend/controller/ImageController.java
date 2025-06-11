@@ -6,6 +6,7 @@ import _11.asktpk.artisanconnectbackend.service.NoticeService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,7 @@ public class ImageController {
     private String uploadDir;
 
     @PostMapping("/upload/{id}")
-    public ResponseEntity<RequestResponseDTO> uploadImage(@RequestParam("file") MultipartFile file, @PathVariable("id") Long noticeId) {
+    public ResponseEntity<RequestResponseDTO> uploadImage(@RequestParam("file") MultipartFile file, @PathVariable("id") Long noticeId, @Param("isMainImage") Boolean isMainImage) {
         try {
             if(file.isEmpty()) {
                 return ResponseEntity.badRequest().body(new RequestResponseDTO("File is empty"));
@@ -44,10 +45,11 @@ public class ImageController {
             }
 
             String newImageName = imageService.saveImageToStorage(uploadDir, file);
-            imageService.addImageNameToDB(newImageName, noticeId);
+            imageService.addImageNameToDB(newImageName, noticeId, isMainImage);
 
             return ResponseEntity.ok(new RequestResponseDTO("Image uploaded successfully with new name: " + newImageName));
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(new RequestResponseDTO(e.getMessage()));
         }
     }
