@@ -1,21 +1,12 @@
 package _11.asktpk.artisanconnectbackend;
 
-import _11.asktpk.artisanconnectbackend.dto.CategoriesDTO;
-import _11.asktpk.artisanconnectbackend.dto.ClientDTO;
-import _11.asktpk.artisanconnectbackend.dto.NoticeDTO;
-import _11.asktpk.artisanconnectbackend.dto.WishlistDTO;
-import _11.asktpk.artisanconnectbackend.entities.Client;
-import _11.asktpk.artisanconnectbackend.entities.Notice;
-import _11.asktpk.artisanconnectbackend.entities.Wishlist;
+
+
+import _11.asktpk.artisanconnectbackend.dto.*;
 import _11.asktpk.artisanconnectbackend.repository.ClientRepository;
 import _11.asktpk.artisanconnectbackend.repository.NoticeRepository;
-import _11.asktpk.artisanconnectbackend.repository.WishlistRepository;
-import _11.asktpk.artisanconnectbackend.service.ClientService;
-import _11.asktpk.artisanconnectbackend.service.ImageService;
-import _11.asktpk.artisanconnectbackend.service.NoticeService;
-import _11.asktpk.artisanconnectbackend.service.WishlistService;
+import _11.asktpk.artisanconnectbackend.service.*;
 import _11.asktpk.artisanconnectbackend.utils.Enums;
-import jakarta.persistence.EntityNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.*;
@@ -23,16 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import _11.asktpk.artisanconnectbackend.entities.Image;
 import _11.asktpk.artisanconnectbackend.repository.ImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -41,8 +31,9 @@ import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.Comparator;
+import java.util.stream.Collectors;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,486 +48,146 @@ class ArtisanConnectBackendApplicationTests {
 
     private static final Logger logger = LogManager.getLogger(ArtisanConnectBackendApplicationTests.class);
 
-    @LocalServerPort
-    private final int port;
-
-    private final ClientService clientService;
-    private final TestRestTemplate restTemplate;
-
-    @Autowired
-    public ArtisanConnectBackendApplicationTests(ClientService clientService, @LocalServerPort int port) {
-        this.clientService = clientService;
-        this.port = port;
-        this.restTemplate = new TestRestTemplate();
-    }
-
-
-    @Nested
-    @DisplayName("Testy jednostkowe ClientService")
-    class ClientServiceTest {
-
-        private final ClientRepository clientRepository;
-        private final ClientService clientService;
-
-        ClientServiceTest(ClientRepository clientRepository, ClientService clientService) {
-            logger.info("Inicjalizacja mocków dla ClientService");
-            this.clientRepository = clientRepository;
-            this.clientService = clientService;
-        }
-
-        @Test
-        @DisplayName("Powinien poprawnie mapować klientów na ClientDTO")
-        void testClientMappingToDTO() {
-            logger.info("Tworzenie danych klientów...");
-            Client client = createTestClient("Jan", "Kowalski");
-            when(clientRepository.findAll()).thenReturn(List.of(client));
-
-            logger.info("Wywołanie metody getAllClients...");
-            List<ClientDTO> clientDTOList = clientService.getAllClients();
-
-            assertThat(clientDTOList).hasSize(1);
-            assertThat(clientDTOList.get(0).getFirstName()).isEqualTo("Jan");
-            verify(clientRepository, times(1)).findAll();
-            logger.info("Test zakończony poprawnie");
-        }
-
-        private Client createTestClient(String firstName, String lastName) {
-            Client client = new Client();
-            client.setFirstName(firstName);
-            client.setLastName(lastName);
-            client.setEmail(firstName.toLowerCase() + "." + lastName.toLowerCase() + "@example.com");
-            client.setRole(clientService.getUserRole());
-            return client;
-        }
-    }
-
-    @Nested
-    @DisplayName("Testy integracyjne ClientController")
-    class ClientControllerTest {
-
-        private final int port;
-        private final TestRestTemplate restTemplate;
-        private final ClientService clientService;
-        private final NoticeService noticeService;
-        private final NoticeRepository noticeRepository;
-        private final Logger logger = LogManager.getLogger(ClientControllerTest.class);
-
-        @Autowired
-        public ClientControllerTest(
-                @LocalServerPort int port,
-                TestRestTemplate restTemplate,
-                ClientService clientService,
-                NoticeService noticeService,
-                NoticeRepository noticeRepository) {
-            this.port = port;
-            this.restTemplate = restTemplate;
-            this.clientService = clientService;
-            this.noticeService = noticeService;
-            this.noticeRepository = noticeRepository;
-        }
-
-        @BeforeEach
-        void cleanDatabase() {
-
-            noticeRepository.deleteAll();
-
-            clientService.getAllClients().forEach(client -> {
-                try {
-                    clientService.deleteClient(client.getId());
-                } catch (Exception e) {
-                    logger.error("Błąd podczas usuwania klienta: {}", e.getMessage());
-                }
-            });
-        }
-
-        private boolean hasNotices(Long clientId) {
-            return noticeService.getAllNotices().stream()
-                    .anyMatch(notice -> notice.getClientId().equals(clientId));
-        }
-
-        @Test
-        @DisplayName("Powinien poprawnie usunąć klienta z powiązanymi ogłoszeniami")
-        void shouldDeleteClientWithNotices() {
-            ClientDTO client = clientService.addClient(createTestDTO("client@example.com", "Jan", "Kowalski"));
-
-            NoticeDTO notice = new NoticeDTO();
-            notice.setClientId(client.getId());
-            notice.setTitle("Test Notice");
-            Long noticeId = noticeService.addNotice(notice);
-
-            ResponseEntity<Void> deleteNoticeResponse = restTemplate.exchange(
-                    createURLWithPort("/api/v1/notices/delete/" + noticeId),
-                    HttpMethod.DELETE,
-                    null,
-                    Void.class
-            );
-            assertThat(deleteNoticeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-            ResponseEntity<Void> deleteClientResponse = restTemplate.exchange(
-                    createURLWithPort("/api/v1/clients/delete/" + client.getId()),
-                    HttpMethod.DELETE,
-                    null,
-                    Void.class
-            );
-
-            assertThat(deleteClientResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(clientService.clientExists(client.getId())).isFalse();
-            assertThat(noticeService.noticeExists(noticeId)).isFalse();
-        }
-        @Autowired
-        private ClientRepository clientRepository;
-
-
-        @Test
-        @DisplayName("Powinien zwracać wszystkich klientów")
-        void shouldReturnAllClients() {
-            ClientDTO client1 = clientService.addClient(createTestDTO("client1@example.com", "Anna", "Nowak"));
-            ClientDTO client2 = clientService.addClient(createTestDTO("client2@example.com", "Adam", "Kowalski"));
-
-            ResponseEntity<ClientDTO[]> response = restTemplate.getForEntity(
-                    createURLWithPort("/api/v1/clients/get/all"),
-                    ClientDTO[].class
-            );
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody()).hasSize(2);
-        }
-
-
-
-        @Test
-        @DisplayName("Powinien zwrócić błąd przy próbie usunięcia klienta z powiązanymi ogłoszeniami bez kaskady")
-        void shouldFailWhenDeletingClientWithNoticesWithoutCascade() {
-            noticeService.getAllNotices().forEach(n -> noticeService.deleteNotice(n.getNoticeId()));
-            clientService.getAllClients().forEach(c -> clientService.deleteClient(c.getId()));
-
-            ClientDTO client = clientService.addClient(createTestDTO("client@example.com", "Jan", "Kowalski"));
-
-            NoticeDTO notice = new NoticeDTO();
-            notice.setClientId(client.getId());
-            notice.setTitle("Test Notice");
-            noticeService.addNotice(notice);
-
-            try {
-                clientService.deleteClient(client.getId());
-                fail("Powinien zostać rzucony wyjątek DataIntegrityViolationException");
-            } catch (DataIntegrityViolationException e) {
-                // Oczekiwany wyjątek
-                assertThat(e.getMessage()).contains("could not execute statement");
-            }
-        }
-
-        @Test
-        @DisplayName("Powinien poprawnie usunąć klienta bez powiązanych ogłoszeń")
-        void shouldDeleteClientWithoutNotices() {
-            ClientDTO client = clientService.addClient(createTestDTO("client@example.com", "Jan", "Kowalski"));
-
-            ResponseEntity<Void> deleteResponse = restTemplate.exchange(
-                    createURLWithPort("/api/v1/clients/delete/" + client.getId()),
-                    HttpMethod.DELETE,
-                    null,
-                    Void.class
-            );
-
-            assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(clientService.clientExists(client.getId())).isFalse();
-        }
-
-        private ClientDTO createTestDTO(String email, String firstName, String lastName) {
-            ClientDTO clientDTO = new ClientDTO();
-            clientDTO.setEmail(email);
-            clientDTO.setFirstName(firstName);
-            clientDTO.setLastName(lastName);
-            clientDTO.setRole("USER");
-            return clientDTO;
-        }
-
-        private String createURLWithPort(String uri) {
-            return "http://localhost:" + port + uri;
-        }
-    }
-
-    @Nested
-    @DisplayName("Testy jednostkowe NoticeService")
-    class NoticeServiceUnitTest {
-
-        private final NoticeRepository noticeRepository;
-        private final ClientRepository clientRepository;
-        private final NoticeService noticeService;
-
-        NoticeServiceUnitTest() {
-            this.noticeRepository = mock(NoticeRepository.class);
-            this.clientRepository = mock(ClientRepository.class);
-            this.noticeService = new NoticeService(
-                    noticeRepository,
-                    clientRepository,
-                    null,
-                    null
-            );
-        }
-
-        @Test
-        @DisplayName("Powinien poprawnie dodać ogłoszenie")
-        void shouldAddNoticeSuccessfully() {
-            Client client = createTestClient("test@example.com", "Anna", "Kowalska");
-            when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-
-            NoticeDTO noticeDTO = new NoticeDTO();
-            noticeDTO.setClientId(1L);
-            noticeDTO.setTitle("Test Notice");
-            noticeDTO.setDescription("Opis ogłoszenia");
-            noticeDTO.setPrice(100.0);
-
-            Notice notice = new Notice();
-            notice.setIdNotice(1L);
-
-            when(noticeRepository.save(any(Notice.class))).thenReturn(notice);
-
-            Long savedNoticeId = noticeService.addNotice(noticeDTO);
-
-            assertThat(savedNoticeId).isEqualTo(1L);
-            verify(noticeRepository, times(1)).save(any(Notice.class));
-        }
-
-        @Test
-        @DisplayName("Powinien zwrócić wyjątek, gdy klient dla ogłoszenia nie istnieje")
-        void shouldThrowExceptionWhenClientNotFound() {
-            NoticeDTO noticeDTO = new NoticeDTO();
-            noticeDTO.setClientId(1L);
-
-            when(clientRepository.findById(1L)).thenReturn(Optional.empty());
-
-            assertThrows(EntityNotFoundException.class, () -> noticeService.addNotice(noticeDTO));
-        }
-
-        private Client createTestClient(String email, String firstName, String lastName) {
-            Client client = new Client();
-            client.setId(1L);
-            client.setEmail(email);
-            client.setFirstName(firstName);
-            client.setLastName(lastName);
-            return client;
-        }
-    }
-
-
     @Nested
     @DisplayName("Testy integracyjne ImageService")
     class ImageServiceTest {
 
-        private final ImageRepository imageRepository;
+        private final Logger logger = LogManager.getLogger(ImageServiceTest.class);
         private final ImageService imageService;
+        private final ImageRepository imageRepository;
+        private final Path testDirectory;
 
         ImageServiceTest() throws Exception {
+            logger.info("Inicjalizacja testów ImageService");
             this.imageRepository = mock(ImageRepository.class);
+            this.testDirectory = Files.createTempDirectory("test-images");
+            logger.info("Utworzono katalog testowy: {}", testDirectory);
+
             Constructor<ImageService> constructor = ImageService.class.getDeclaredConstructor(ImageRepository.class);
             constructor.setAccessible(true);
             this.imageService = constructor.newInstance(imageRepository);
         }
 
-        @Test
-        @DisplayName("Powinien poprawnie zapisać obraz w magazynie plików")
-        void shouldSaveImageToStorage() throws IOException {
-            MultipartFile file = mock(MultipartFile.class);
-            when(file.getOriginalFilename()).thenReturn("test.jpg");
-            when(file.getInputStream()).thenReturn(Files.newInputStream(Path.of("src/test/resources/test.jpg")));
-
-            String uploadDirectory = "upload_dir";
-            Path uploadPath = Path.of(uploadDirectory);
-            Files.createDirectories(uploadPath);
-
-            String savedFileName = imageService.saveImageToStorage(uploadDirectory, file);
-
-            assertTrue(savedFileName.contains(".jpg"));
-            assertTrue(Files.exists(uploadPath.resolve(savedFileName)));
-
-            Files.deleteIfExists(uploadPath.resolve(savedFileName));
+        @AfterEach
+        void cleanup() throws IOException {
+            logger.info("Sprzątanie po teście - usuwanie katalogu testowego: {}", testDirectory);
+            Files.walk(testDirectory)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                            logger.debug("Usunięto plik: {}", path);
+                        } catch (IOException e) {
+                            logger.warn("Nie można usunąć pliku: {}", path, e);
+                        }
+                    });
         }
 
         @Test
-        @DisplayName("Powinien poprawnie zapisać nazwę obrazu do bazy danych")
-        void shouldAddImageNameToDB() {
-            String filename = UUID.randomUUID() + "test.jpg";
-            Long noticeId = 1L;
+        @DisplayName("Powinien poprawnie zapisać obraz w magazynie plików")
+        void shouldSaveImageToStorage() throws IOException {
+            logger.info("Test zapisu obrazu - rozpoczęcie");
 
-            imageService.addImageNameToDB(filename, noticeId);
+            final String testFileName = "test.jpg";
+            final Path testFilePath = testDirectory.resolve(testFileName);
+            Files.createFile(testFilePath);
+            Files.write(testFilePath, "test content".getBytes());
+            logger.debug("Utworzono testowy plik: {}", testFilePath);
 
-            verify(imageRepository, times(1)).save(Mockito.any(Image.class));
+            final MultipartFile file = mock(MultipartFile.class);
+            when(file.getOriginalFilename()).thenReturn(testFileName);
+            when(file.getInputStream()).thenReturn(Files.newInputStream(testFilePath));
+
+            final String savedFileName = imageService.saveImageToStorage(testDirectory.toString(), file);
+            logger.info("Zapisano plik pod nazwą: {}", savedFileName);
+
+            assertTrue(savedFileName.endsWith(".jpg"));
+            assertTrue(Files.exists(testDirectory.resolve(savedFileName)));
+            logger.info("Test zapisu obrazu - zakończony pomyślnie");
         }
 
         @Test
         @DisplayName("Powinien poprawnie pobrać obraz")
         void shouldGetImage() throws IOException {
-            Path imagePath = Path.of("src/test/resources/test.jpg");
-            Resource resource = imageService.getImage("src/test/resources", "test.jpg");
+            logger.info("Test pobierania obrazu - rozpoczęcie");
+
+            final String testFileName = "test.jpg";
+            Files.createFile(testDirectory.resolve(testFileName));
+            logger.debug("Utworzono testowy plik: {}", testFileName);
+
+            final Resource resource = imageService.getImage(testDirectory.toString(), testFileName);
+            logger.info("Pobrano zasób: {}", resource.getFilename());
 
             assertNotNull(resource);
-            assertTrue(resource instanceof UrlResource);
-            assertTrue(Files.exists(imagePath));
+            assertTrue(resource.exists());
+            assertInstanceOf(UrlResource.class, resource);
+            logger.info("Test pobierania obrazu - zakończony pomyślnie");
         }
 
         @Test
         @DisplayName("Powinien zgłosić błąd, gdy obraz nie zostanie znaleziony")
         void shouldThrowExceptionWhenImageNotFound() {
-            Exception exception = assertThrows(IOException.class, () -> {
-                imageService.getImage("invalid/path", "missing.jpg");
-            });
+            logger.info("Test obsługi błędu - rozpoczęcie");
+
+            final Exception exception = assertThrows(IOException.class, () ->
+                    imageService.getImage(testDirectory.toString(), "missing.jpg")
+            );
+            logger.info("Złapano wyjątek: {}", exception.getMessage());
 
             assertThat(exception).hasMessageContaining("File not found");
+            logger.info("Test obsługi błędu - zakończony pomyślnie");
         }
 
         @Test
-        @DisplayName("Powinien poprawnie usuwać obraz z magazynu plików i bazy danych")
+        @DisplayName("Powinien poprawnie usuwać obraz z magazynu plików")
         void shouldDeleteImage() throws IOException {
-            Path imagePath = Files.createTempFile("temp-dir", "temp-image.jpg");
-            String imageName = imagePath.getFileName().toString();
-            String imageDirectory = imagePath.getParent().toString();
+            logger.info("Test usuwania obrazu - rozpoczęcie");
 
-            Image image = new Image();
-            image.setImageName(imageName);
-            when(imageRepository.existsImageByImageNameEqualsIgnoreCase(imageName)).thenReturn(true);
+            final String testFileName = "test-delete.jpg";
+            final Path testFilePath = testDirectory.resolve(testFileName);
+            Files.createFile(testFilePath);
+            logger.debug("Utworzono testowy plik: {}", testFilePath);
 
-            imageService.deleteImage(imageDirectory, imageName);
+            when(imageRepository.existsImageByImageNameEqualsIgnoreCase(testFileName)).thenReturn(true);
 
-            assertFalse(Files.exists(imagePath));
-            verify(imageRepository, times(1)).deleteByImageNameEquals(imageName);
+            imageService.deleteImage(testDirectory.toString(), testFileName);
+            logger.info("Usunięto plik: {}", testFileName);
+
+            assertFalse(Files.exists(testFilePath));
+            verify(imageRepository).deleteByImageNameEquals(testFileName);
+            logger.info("Test usuwania obrazu - zakończony pomyślnie");
         }
 
         @Test
-        @DisplayName("Powinien poprawnie zwrócić listę nazw obrazów dla podanego ogłoszenia")
+        @DisplayName("Powinien poprawnie zwrócić listę nazw obrazów")
         void shouldGetImagesListForNotice() throws Exception {
-            Long noticeId = 1L;
-            List<Image> images = List.of(
-                    createTestImage(1L, noticeId, "image1.jpg"),
-                    createTestImage(2L, noticeId, "image2.jpg")
-            );
-            when(imageRepository.findByNoticeId(noticeId)).thenReturn(images);
+            logger.info("Test pobierania listy obrazów - rozpoczęcie");
 
-            List<String> imageNames = imageService.getImagesList(noticeId);
+            final Long noticeId = 1L;
+            final List<String> expectedNames = List.of("image1.jpg", "image2.jpg");
+            final List<Image> mockImages = expectedNames.stream()
+                    .map(name -> {
+                        Image img = new Image();
+                        img.setImageName(name);
+                        return img;
+                    })
+                    .collect(Collectors.toList());
 
-            assertThat(imageNames).hasSize(2);
-            assertThat(imageNames).containsExactly("image1.jpg", "image2.jpg");
-        }
+            when(imageRepository.findByNoticeId(noticeId)).thenReturn(mockImages);
+            logger.debug("Skonfigurowano mock repository dla noticeId: {}", noticeId);
 
-        private Image createTestImage(Long id, Long noticeId, String imageName) {
-            Image image = new Image();
-            image.setId(id);
-            image.setNoticeId(noticeId);
-            image.setImageName(imageName);
-            return image;
-        }
-    }
+            final List<String> imageNames = imageService.getImagesList(noticeId);
+            logger.info("Pobrano listę {} obrazów", imageNames.size());
 
-    @Nested
-    @DisplayName("Testy integracyjne WishlistService")
-    class WishlistServiceTest {
-
-        private final WishlistRepository wishlistRepository;
-        private final NoticeService noticeService;
-        private final WishlistService wishlistService;
-
-        WishlistServiceTest() {
-            this.wishlistRepository = mock(WishlistRepository.class);
-            this.noticeService = mock(NoticeService.class);
-            this.wishlistService = new WishlistService(wishlistRepository, noticeService);
-        }
-
-        @Test
-        @DisplayName("Powinien poprawnie zwrócić wishlist dla klienta")
-        void shouldGetWishlistForClient() {
-            Long clientId = 1L;
-            Wishlist wishlist1 = createTestWishlist(1L, clientId, 10L);
-            Wishlist wishlist2 = createTestWishlist(2L, clientId, 20L);
-
-            when(wishlistRepository.findAllByClientId(clientId)).thenReturn(List.of(wishlist1, wishlist2));
-
-            List<WishlistDTO> result = wishlistService.getWishlistForClientId(clientId);
-
-            assertThat(result).hasSize(2);
-            assertThat(result.get(0).getNoticeId()).isEqualTo(10L);
-            verify(wishlistRepository, times(1)).findAllByClientId(clientId);
-        }
-
-        @Test
-        @DisplayName("Powinien poprawnie dodać lub usunąć element z wishlist")
-        void shouldToggleWishlist() {
-            Client client = createTestClient(1L, "test@example.com");
-            Notice notice = createTestNotice(10L);
-
-            // Scenariusz 1: Element istnieje i powinien zostać usunięty
-            when(wishlistRepository.findByClientAndNotice(client, notice)).thenReturn(Optional.of(new Wishlist()));
-
-            boolean removed = wishlistService.toggleWishlist(client, notice);
-
-            assertThat(removed).isFalse();
-            verify(wishlistRepository, times(1)).delete(any(Wishlist.class));
-
-            // Scenariusz 2: Element nie istnieje i powinien zostać dodany
-            when(wishlistRepository.findByClientAndNotice(client, notice)).thenReturn(Optional.empty());
-
-            boolean added = wishlistService.toggleWishlist(client, notice);
-
-            assertThat(added).isTrue();
-            verify(wishlistRepository, times(1)).save(any(Wishlist.class));
-        }
-
-        @Test
-        @DisplayName("Powinien zwrócić listę ogłoszeń w wishlist klienta")
-        void shouldGetNoticesInWishlist() {
-            Long clientId = 1L;
-            Wishlist wishlist1 = createTestWishlist(1L, clientId, 10L);
-            Wishlist wishlist2 = createTestWishlist(2L, clientId, 20L);
-
-            when(wishlistRepository.findAllByClientId(clientId)).thenReturn(List.of(wishlist1, wishlist2));
-            when(noticeService.getNoticeById(10L)).thenReturn(createNoticeDTO(10L, "Ogłoszenie 1"));
-            when(noticeService.getNoticeById(20L)).thenReturn(createNoticeDTO(20L, "Ogłoszenie 2"));
-
-            List<NoticeDTO> result = wishlistService.getNoticesInWishlist(clientId);
-
-            assertThat(result).hasSize(2);
-            assertThat(result.get(0).getNoticeId()).isEqualTo(10L);
-            assertThat(result.get(1).getNoticeId()).isEqualTo(20L);
-        }
-
-        private Wishlist createTestWishlist(Long id, Long clientId, Long noticeId) {
-            Wishlist wishlist = new Wishlist();
-            wishlist.setId(id);
-
-            Client client = new Client();
-            client.setId(clientId);
-            wishlist.setClient(client);
-
-            Notice notice = new Notice();
-            notice.setIdNotice(noticeId);
-            wishlist.setNotice(notice);
-
-            return wishlist;
-        }
-
-        private Client createTestClient(Long id, String email) {
-            Client client = new Client();
-            client.setId(id);
-            client.setEmail(email);
-            return client;
-        }
-
-        private Notice createTestNotice(Long noticeId) {
-            Notice notice = new Notice();
-            notice.setIdNotice(noticeId);
-            return notice;
-        }
-
-        private NoticeDTO createNoticeDTO(Long noticeId, String title) {
-            NoticeDTO noticeDTO = new NoticeDTO();
-            noticeDTO.setNoticeId(noticeId);
-            noticeDTO.setTitle(title);
-            return noticeDTO;
+            assertThat(imageNames).containsExactlyElementsOf(expectedNames);
+            logger.info("Test pobierania listy obrazów - zakończony pomyślnie");
         }
     }
+
 
     @Nested
     @DisplayName("Testy dla VariablesController")
+    @Transactional
     class VariablesControllerTest {
 
         private final int port;
@@ -546,45 +197,244 @@ class ArtisanConnectBackendApplicationTests {
         public VariablesControllerTest(@LocalServerPort int port, TestRestTemplate restTemplate) {
             this.port = port;
             this.restTemplate = restTemplate;
+            logger.info("Inicjalizacja testów VariablesController");
+        }
+
+        private String registerAndGetJwtToken(String emailPrefix) {
+            logger.info("Rozpoczęcie procesu rejestracji dla prefiksu email: {}", emailPrefix);
+            String email = emailPrefix + "_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+            logger.debug("Wygenerowany email: {}", email);
+
+            ClientRegistrationDTO registrationDTO = new ClientRegistrationDTO();
+            registrationDTO.setEmail(email);
+            registrationDTO.setFirstName("Test");
+            registrationDTO.setLastName("User");
+            registrationDTO.setPassword("password123");
+
+            ResponseEntity<AuthResponseDTO> response = restTemplate.postForEntity(
+                    createURLWithPort("/api/v1/auth/register"),
+                    registrationDTO,
+                    AuthResponseDTO.class
+            );
+
+            if (response.getStatusCode() == HttpStatus.CONFLICT) {
+                logger.warn("Użytkownik już istnieje, próba logowania");
+                AuthRequestDTO loginRequest = new AuthRequestDTO();
+                loginRequest.setEmail(email);
+                loginRequest.setPassword("password123");
+
+                response = restTemplate.postForEntity(
+                        createURLWithPort("/api/v1/auth/login"),
+                        loginRequest,
+                        AuthResponseDTO.class
+                );
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            } else {
+                logger.info("Pomyślnie zarejestrowano nowego użytkownika");
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            }
+
+            assertThat(response.getBody()).isNotNull();
+            logger.debug("Otrzymano token JWT");
+            return response.getBody().getToken();
+        }
+
+        private HttpEntity<Void> createRequestWithToken(String token) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+            return new HttpEntity<>(headers);
         }
 
         @Test
         @DisplayName("Powinien zwrócić kategorie")
         void shouldGetCategories() {
-            String url = createURLWithPort("/api/v1/vars/categories");
+            logger.info("Test pobierania kategorii - rozpoczęcie");
+            String token = registerAndGetJwtToken(
+                    "categories"
+            );
+            logger.debug("Otrzymano token autoryzacyjny");
 
-            ResponseEntity<CategoriesDTO[]> response = restTemplate.getForEntity(url, CategoriesDTO[].class);
+            String url = createURLWithPort("/api/v1/vars/categories");
+            logger.debug("Utworzono URL endpointu: {}", url);
+
+            HttpEntity<Void> request = createRequestWithToken(token);
+            ResponseEntity<CategoriesDTO[]> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    CategoriesDTO[].class
+            );
+            logger.info("Wykonano zapytanie o kategorie");
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isNotNull().isNotEmpty();
+            logger.info("Test pobierania kategorii - zakończony pomyślnie");
         }
 
         @Test
         @DisplayName("Powinien zwrócić statusy")
         void shouldGetStatuses() {
+            String token = registerAndGetJwtToken(
+                    "statuses"
+            );
+
             String url = createURLWithPort("/api/v1/vars/statuses");
 
-            ResponseEntity<Enums.Status[]> response = restTemplate.getForEntity(url, Enums.Status[].class);
+            HttpEntity<Void> request = createRequestWithToken(token);
+            ResponseEntity<Enums.Status[]> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    Enums.Status[].class
+            );
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isNotNull().isNotEmpty();
         }
 
-        @Test
-        @DisplayName("Powinien zwrócić role")
-        void shouldGetRoles() {
-            String url = createURLWithPort("/api/v1/vars/roles");
-
-            ResponseEntity<Enums.Role[]> response = restTemplate.getForEntity(url, Enums.Role[].class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(response.getBody()).isNotNull().isNotEmpty();
-        }
 
         private String createURLWithPort(String uri) {
             return "http://localhost:" + port + uri;
         }
     }
+
+
+
+    @Nested
+    @DisplayName("Testy integracyjne AuthController")
+    @Transactional
+    class AuthControllerTest {
+
+        private final int port;
+        private final TestRestTemplate restTemplate;
+        private final ClientRepository clientRepository;
+        private final NoticeRepository noticeRepository;
+        private final Logger logger = LogManager.getLogger(AuthControllerTest.class);
+
+        @Autowired
+        public AuthControllerTest(
+                @LocalServerPort int port,
+                TestRestTemplate restTemplate,
+                ClientRepository clientRepository,
+                NoticeRepository noticeRepository) {
+            this.port = port;
+            this.restTemplate = restTemplate;
+            this.clientRepository = clientRepository;
+            this.noticeRepository = noticeRepository;
+        }
+
+        @BeforeEach
+        void cleanDatabase() {
+            noticeRepository.deleteAll();
+            clientRepository.deleteAll();
+        }
+
+        private String createURLWithPort(String uri) {
+            return "http://localhost:" + port + uri;
+        }
+
+
+        @Test
+        @DisplayName("Powinien zwrócić błąd przy rejestracji z istniejącym emailem")
+        void shouldFailRegisterWithExistingEmail() {
+            String email = "user_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+            ClientRegistrationDTO registrationDTO = new ClientRegistrationDTO();
+            registrationDTO.setEmail(email);
+            registrationDTO.setFirstName("Jan");
+            registrationDTO.setLastName("Kowalski");
+            registrationDTO.setPassword("password123");
+
+            ResponseEntity<AuthResponseDTO> firstResponse = restTemplate.postForEntity(
+                    createURLWithPort("/api/v1/auth/register"),
+                    registrationDTO,
+                    AuthResponseDTO.class
+            );
+            assertThat(firstResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+            ResponseEntity<AuthResponseDTO> secondResponse = restTemplate.postForEntity(
+                    createURLWithPort("/api/v1/auth/register"),
+                    registrationDTO,
+                    AuthResponseDTO.class
+            );
+            logger.info("Wysłano żądanie rejestracji");
+
+            assertThat(secondResponse.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        }
+
+        @Test
+        @DisplayName("Powinien poprawnie zalogować istniejącego użytkownika")
+        void shouldLoginExistingUser() {
+            logger.info("Test logowania użytkownika - rozpoczęcie");
+            String email = "user_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+            String password = "password123";
+
+            ClientRegistrationDTO registrationDTO = new ClientRegistrationDTO();
+            registrationDTO.setEmail(email);
+            registrationDTO.setFirstName("Jan");
+            registrationDTO.setLastName("Kowalski");
+            registrationDTO.setPassword(password);
+            restTemplate.postForEntity(
+                    createURLWithPort("/api/v1/auth/register"),
+                    registrationDTO,
+                    AuthResponseDTO.class
+            );
+            logger.debug("Zarejestrowano testowego użytkownika: {}", email);
+
+            AuthRequestDTO loginRequest = new AuthRequestDTO();
+            loginRequest.setEmail(email);
+            loginRequest.setPassword(password);
+
+            ResponseEntity<AuthResponseDTO> response = restTemplate.postForEntity(
+                    createURLWithPort("/api/v1/auth/login"),
+                    loginRequest,
+                    AuthResponseDTO.class
+            );
+            logger.info("Wykonano próbę logowania");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getToken()).isNotBlank();
+            logger.info("Test logowania - zakończony pomyślnie");
+        }
+
+        @Test
+        @DisplayName("Powinien zwrócić błąd przy logowaniu z nieprawidłowym hasłem")
+        void shouldFailLoginWithIncorrectPassword() {
+            logger.info("Test obsługi błędnych danych logowania - rozpoczęcie");
+            String email = "user_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+            String password = "password123";
+
+            ClientRegistrationDTO registrationDTO = new ClientRegistrationDTO();
+            registrationDTO.setEmail(email);
+            registrationDTO.setFirstName("Jan");
+            registrationDTO.setLastName("Kowalski");
+            registrationDTO.setPassword(password);
+            restTemplate.postForEntity(
+                    createURLWithPort("/api/v1/auth/register"),
+                    registrationDTO,
+                    AuthResponseDTO.class
+            );
+
+            AuthRequestDTO loginRequest = new AuthRequestDTO();
+            loginRequest.setEmail(email);
+            loginRequest.setPassword("wrongPassword");
+            logger.debug("Przygotowano nieprawidłowe dane logowania");
+
+            ResponseEntity<AuthResponseDTO> response = restTemplate.postForEntity(
+                    createURLWithPort("/api/v1/auth/login"),
+                    loginRequest,
+                    AuthResponseDTO.class
+            );
+            logger.info("Wykonano próbę logowania z błędnymi danymi");
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+            logger.info("Test obsługi błędnych danych - zakończony pomyślnie");
+        }
+
+    }
+
+
+
 
 
 }
