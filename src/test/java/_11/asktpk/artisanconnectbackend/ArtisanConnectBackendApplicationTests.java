@@ -71,16 +71,17 @@ class ArtisanConnectBackendApplicationTests {
         @AfterEach
         void cleanup() throws IOException {
             logger.info("Sprzątanie po teście - usuwanie katalogu testowego: {}", testDirectory);
-            Files.walk(testDirectory)
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                            logger.debug("Usunięto plik: {}", path);
-                        } catch (IOException e) {
-                            logger.warn("Nie można usunąć pliku: {}", path, e);
-                        }
-                    });
+            try (var paths = Files.walk(testDirectory)) {
+                paths.sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.delete(path);
+                                logger.debug("Usunięto plik: {}", path);
+                            } catch (IOException e) {
+                                logger.warn("Nie można usunąć pliku: {}", path, e);
+                            }
+                        });
+            }
         }
 
         @Test
