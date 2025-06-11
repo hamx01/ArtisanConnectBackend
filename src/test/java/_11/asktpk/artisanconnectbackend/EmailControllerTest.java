@@ -1,6 +1,7 @@
 package _11.asktpk.artisanconnectbackend;
 
 import _11.asktpk.artisanconnectbackend.security.JwtUtil;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -24,8 +25,9 @@ class EmailControllerIntegrationTest {
     private JwtUtil jwtUtil;
 
     @Test
+    @DisplayName("Wysyłanie Maila z waznym tokenem")
     void testSendEmailWithValidAuthToken() throws Exception {
-        System.out.println("Starting testSendEmailWithValidAuthToken");
+        System.out.println("Startowanie testSendEmailWithValidAuthToken");
         String jsonPayload = """
                 {
                     "to": "test@example.com",
@@ -33,7 +35,7 @@ class EmailControllerIntegrationTest {
                     "body": "Test Body"
                 }
                 """;
-        System.out.println("Sending JSON payload: " + jsonPayload);
+        System.out.println("Wysyłanie JSON payload: " + jsonPayload);
 
         String jwtToken = "Bearer " + jwtUtil.generateToken("test@example.com", "USER", 1L);
 
@@ -45,13 +47,14 @@ class EmailControllerIntegrationTest {
                 .andExpect(content().string("Email wysłany pomyślnie"))
                 .andReturn();
 
-        System.out.println("Response status: " + result.getResponse().getStatus());
-        System.out.println("Response content: " + result.getResponse().getContentAsString());
+        System.out.println("Status odpowiedzi: " + result.getResponse().getStatus());
+        System.out.println("Treść odpowiedzi: " + result.getResponse().getContentAsString());
     }
 
     @Test
+    @DisplayName("Wysyłanie Maila bez tokena")
     void testSendEmailWithoutAuthToken() throws Exception {
-        System.out.println("Starting testSendEmailWithoutAuthToken");
+        System.out.println("Startowanie testSendEmailWithoutAuthToken");
         String jsonPayload = """
                 {
                     "to": "test@example.com",
@@ -59,7 +62,7 @@ class EmailControllerIntegrationTest {
                     "body": "Test Body"
                 }
                 """;
-        System.out.println("Sending JSON payload: " + jsonPayload);
+        System.out.println("Wysyłanie JSON payload: " + jsonPayload);
 
         MvcResult result = mockMvc.perform(post("/api/v1/email/send")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,7 +70,7 @@ class EmailControllerIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andReturn();
 
-        System.out.println("Response status: " + result.getResponse().getStatus());
-        System.out.println("Response content: " + result.getResponse().getContentAsString());
+        System.out.println("Status odpowiedzi: " + result.getResponse().getStatus());
+        System.out.println("Treść odpowiedzi: " + result.getResponse().getContentAsString());
     }
 }
