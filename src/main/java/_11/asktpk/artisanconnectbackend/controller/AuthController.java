@@ -3,6 +3,7 @@ package _11.asktpk.artisanconnectbackend.controller;
 import _11.asktpk.artisanconnectbackend.customExceptions.ClientAlreadyExistsException;
 import _11.asktpk.artisanconnectbackend.customExceptions.WrongLoginPasswordException;
 import _11.asktpk.artisanconnectbackend.dto.*;
+import _11.asktpk.artisanconnectbackend.security.JwtUtil;
 import _11.asktpk.artisanconnectbackend.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +17,10 @@ import org.springframework.web.client.HttpClientErrorException;
 public class AuthController {
 
     private final AuthService authService;
-
-    public AuthController(AuthService authService) {
+    private final JwtUtil jwtUtil;
+    public AuthController(AuthService authService, JwtUtil jwtUtil) {
         this.authService = authService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/login")
@@ -93,5 +95,15 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new RequestResponseDTO("Authentication Error (Google): " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return ResponseEntity.status(HttpStatus.OK).body(new AuthResponseDTO(jwtUtil.extractUserId(token), jwtUtil.extractRole(token), token));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new RequestResponseDTO("Invalid or empty token"));
     }
 }
