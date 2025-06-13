@@ -5,11 +5,11 @@ VALUES
 
 INSERT INTO clients (email, first_name, last_name, password, role_id)
 VALUES
-    ('dignissim.tempor.arcu@aol.ca', 'Diana', 'Harrison', 'password', 1),
-    ('john.doe@example.com', 'John', 'Doe', 'password123', 2),
-    ('jane.smith@example.com', 'Jane', 'Smith', 'securepass', 1),
-    ('michael.brown@example.com', 'Michael', 'Brown', 'mypassword', 1),
-    ('emily.jones@example.com', 'Emily', 'Jones', 'passw0rd', 1);
+    ('dignissim.tempor.arcu@aol.ca', 'Diana', 'Harrison', '', 1),
+    ('john.doe@example.com', 'John', 'Doe', '', 2),
+    ('jane.smith@example.com', 'Jane', 'Smith', '', 1),
+    ('michael.brown@example.com', 'Michael', 'Brown', '', 1),
+    ('emily.jones@example.com', 'Emily', 'Jones', '', 1);
 
 
 INSERT INTO notice (title, description, client_id, price, category, status, publish_date) VALUES

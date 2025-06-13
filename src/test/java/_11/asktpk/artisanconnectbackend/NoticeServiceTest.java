@@ -39,6 +39,9 @@ class NoticeServiceTest {
     @Mock
     private AttributeValuesRepository attributeValuesRepository;
 
+    @Mock
+    private AttributesNoticeRepository attributesNoticeRepository;
+
     @InjectMocks
     private NoticeService noticeService;
 
@@ -121,8 +124,8 @@ class NoticeServiceTest {
     @DisplayName("Dodanie ogłoszenia z atrybutami")
     void addNotice_WithAttributes_ShouldSaveAttributes() {
         AttributeDto attributeDto = new AttributeDto();
-        attributeDto.setName("Materiał");
-        attributeDto.setValue("Drewno");
+        attributeDto.setName("Kolor");
+        attributeDto.setValue("Zielony");
         sampleNoticeRequest.setAttributes(List.of(attributeDto));
 
         when(clientRepository.findById(1L)).thenReturn(Optional.of(sampleClient));
